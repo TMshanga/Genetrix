@@ -40,7 +40,8 @@ import DataStructures.Tree;
 
 
 public class ContentsPage {
-	TreeView tree = new TreeView<String>();	
+	TreeView<String> tree = new TreeView<String>();	
+	
 	public VBox getContentsPage()
 	{
 		VBox stackPane = new VBox();
@@ -55,9 +56,8 @@ public class ContentsPage {
 			fileMenu.getItems().add(new MenuItem("flow"));
 			menuBar.getMenus().addAll(fileMenu);
 		//Tree
-			TreeView tree = depthFirstAssembily(Main.currentProject);	
+			tree = depthFirstAssembily(Main.currentProject);	
 			tree.setShowRoot(false);
-			tree.getSelectionModel().selectedItemProperty().addListener(new listener());	
 			tree.setContextMenu(getContextMenu());	
 		//Final
 			stackPane.setAlignment(Pos.TOP_CENTER);
@@ -65,25 +65,25 @@ public class ContentsPage {
 		return stackPane;
 	}
 	
-	public MyItem branch(String name,MyItem<String,Page> parent){
-		MyItem<String,Page>item = new MyItem<String,Page>(name);
-		item.setExpanded(true);
-		parent.getChildren().add(item);	
-		return item;
-	}
-	
-	class MyItem<T1,T2> extends TreeItem {
+	class MyTreeItem<T1> extends TreeItem<T1> {
 		ArrayList<Integer> internalAddress;
-	    public MyItem(){super(); internalAddress = new ArrayList<Integer>();}  
-	    public MyItem(Object value) {super(); setValue(value); internalAddress = new ArrayList<Integer>();}  
+	    public MyTreeItem(){super(); internalAddress = new ArrayList<Integer>();}
+	    public MyTreeItem(T1 value) {super(); setValue(value); internalAddress = new ArrayList<Integer>();} 
+	
+		public MyTreeItem<T1> branch(T1 value){
+			MyTreeItem<T1>item = new MyTreeItem<T1>(value);
+			item.setExpanded(true);
+			getChildren().add(item);
+			return item;
+		}
 	}
 	
 	class listener implements ChangeListener{
 		@Override public void changed(ObservableValue observable,Object oldValue,Object newValue) {
-			MyItem item = (MyItem)newValue;
+			MyTreeItem item = (MyTreeItem)newValue;
 			
 			if(item.internalAddress.size()>1) { //if the clicked item is not the root node
-				PageInterface page = (PageInterface)Tree.getNode(Main.currentProject.pageTree.root,item.internalAddress).data;
+				PageInterface page = (PageInterface)Main.currentProject.pageTree.getNode(item.internalAddress).data;
 				Pane pane = page.BuildPane();
 				Stage subStage = new Stage();
 				subStage.setOpacity(0.8);
@@ -104,23 +104,28 @@ public class ContentsPage {
 		cut.setOnAction(new EventHandler<ActionEvent>() {
 		    @Override
 		    public void handle(ActionEvent event) {
+		    	MyTreeItem item = (MyTreeItem)tree.getSelectionModel().getSelectedItem();
+		    	System.out.println(item.toString());
+				Tree.Node<PageInterface> node = (Tree.Node<PageInterface>)Main.currentProject.pageTree.getNode(item.internalAddress);
+				node.getParent().remove(node);
+				tree = depthFirstAssembily(Main.currentProject);
 		}});
 		return contextMenu;
 	}
 	
-	public TreeView depthFirstAssembily(Project project){
-		MyItem<String,Page> root = new MyItem<String,Page>();
-		TreeView tree = new TreeView<String>(root);
+	public TreeView<String> depthFirstAssembily(Project project){
+		MyTreeItem<String> root = new MyTreeItem<String>();
+		tree.setRoot(root);
 		depthFirstAssembily(project.pageTree.root,new ArrayList<Tree.Node<PageInterface>>(), root,0);
 		return tree;
 	}	
-	private void depthFirstAssembily(Tree.Node<PageInterface> pageNode, ArrayList<Tree.Node<PageInterface>> visited, MyItem<String,Page> ParentGUINode, int childArrayIndex) {
-		MyItem<String,Page> GUINode = branch(pageNode.data.getIcon() + " " + pageNode.data.getTitle(), ParentGUINode);
+	private void depthFirstAssembily(Tree.Node<PageInterface> pageNode, ArrayList<Tree.Node<PageInterface>> visited, MyTreeItem<String> ParentGUINode, int childArrayIndex) {
+		MyTreeItem<String> GUINode =  ParentGUINode.branch(pageNode.data.getIcon() + " " + pageNode.data.getTitle());
 		GUINode.internalAddress.addAll(ParentGUINode.internalAddress);GUINode.internalAddress.add(childArrayIndex);
  		if(visited == null)visited = new ArrayList<Tree.Node<PageInterface>>();
         visited.add(pageNode);
- 		for (int i = 0; i < pageNode.children.size(); i++) {
- 			Tree.Node<PageInterface> childPage = pageNode.children.get(i);
+ 		for (int i = 0; i < pageNode.getChildren().size(); i++) {
+ 			Tree.Node<PageInterface> childPage = pageNode.getChildren().get(i);
  			if(childPage!=null && !visited.contains(childPage))
  			{
  				depthFirstAssembily(childPage,visited,GUINode,i);
