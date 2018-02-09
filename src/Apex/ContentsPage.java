@@ -21,12 +21,16 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -34,6 +38,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import DataStructures.Tree;
@@ -95,24 +100,6 @@ public class ContentsPage {
 		}	
 	}
 	
-	public ContextMenu getContextMenu(){
-		final ContextMenu contextMenu = new ContextMenu();
-		MenuItem cut = new MenuItem("Cut");
-		MenuItem copy = new MenuItem("Copy");
-		MenuItem paste = new MenuItem("Paste");
-		contextMenu.getItems().addAll(cut, copy, paste);
-		cut.setOnAction(new EventHandler<ActionEvent>() {
-		    @Override
-		    public void handle(ActionEvent event) {
-		    	MyTreeItem item = (MyTreeItem)tree.getSelectionModel().getSelectedItem();
-		    	System.out.println(item.toString());
-				Tree.Node<PageInterface> node = (Tree.Node<PageInterface>)Main.currentProject.pageTree.getNode(item.internalAddress);
-				node.getParent().remove(node);
-				tree = depthFirstAssembily(Main.currentProject);
-		}});
-		return contextMenu;
-	}
-	
 	public TreeView<String> depthFirstAssembily(Project project){
 		MyTreeItem<String> root = new MyTreeItem<String>();
 		tree.setRoot(root);
@@ -131,5 +118,55 @@ public class ContentsPage {
  				depthFirstAssembily(childPage,visited,GUINode,i);
  			}
  		}		
+	}
+	
+	public ContextMenu getContextMenu(){
+		final ContextMenu contextMenu = new ContextMenu();
+		MenuItem cut = new MenuItem("Cut");
+		MenuItem copy = new MenuItem("Copy");
+		MenuItem paste = new MenuItem("Paste");
+		MenuItem rename = new MenuItem("Rename");
+		contextMenu.getItems().addAll(cut, copy, paste,new SeparatorMenuItem(),rename);
+		cut.setOnAction(new cutAction());
+		rename.setOnAction(new renameAction());
+		return contextMenu;
+	}
+	
+	class cutAction implements EventHandler<ActionEvent>{
+	    @Override
+	    public void handle(ActionEvent event) {
+	    	MyTreeItem item = (MyTreeItem)tree.getSelectionModel().getSelectedItem();
+	    	System.out.println(item.toString());
+			Tree.Node<PageInterface> node = (Tree.Node<PageInterface>)Main.currentProject.pageTree.getNode(item.internalAddress);
+			node.getParent().remove(node);
+			tree = depthFirstAssembily(Main.currentProject);
+	    }
+	}	
+	class renameAction implements EventHandler<ActionEvent>{
+	    @Override
+	    public void handle(ActionEvent event) {
+	    	MyTreeItem item = (MyTreeItem)tree.getSelectionModel().getSelectedItem();
+	    	System.out.println(item.toString());
+			Tree.Node<PageInterface> node = (Tree.Node<PageInterface>)Main.currentProject.pageTree.getNode(item.internalAddress);			
+
+			Stage renameStage = new Stage();
+			renameStage.setTitle("Rename");
+			StackPane pane = new StackPane();
+			pane.setAlignment(Pos.CENTER);
+			TextField  field = new TextField();
+			pane.getChildren().add(field);
+			pane.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>(){
+			        @Override public void handle(KeyEvent t) {
+			          if(t.getCode()==KeyCode.ENTER)
+			          {
+			  			node.data.setTitle(field.getText());;
+						tree = depthFirstAssembily(Main.currentProject);	  
+			           renameStage.close();
+			          }}});
+			renameStage.setScene(new Scene(pane,field.getMinWidth(),field.getMinHeight()));
+			renameStage.initModality(Modality.WINDOW_MODAL);
+			renameStage.requestFocus();
+			renameStage.show();			
+	    }
 	}
 }

@@ -36,4 +36,9 @@ public class Folder implements PageInterface{
 	
 	public Folder() {this.title = "Folder";}
 	public Folder(String title) {this.title = title;}
+
+	@Override
+	public void setTitle(String title) {
+		this.title = title;
+	}
 }

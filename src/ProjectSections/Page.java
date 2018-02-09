@@ -36,4 +36,9 @@ public class Page implements PageInterface{
 	
 	public Page() {this.title = "Book";}
 	public Page(String title) {this.title = title;}
+
+	@Override
+	public void setTitle(String title) {
+		this.title = title;		
+	}
 }

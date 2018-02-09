@@ -108,32 +108,28 @@ public class Trie extends Tree<Character>{
 		}
     	return suggestions;
     }      
-    public void getSuggestionsStage2(ArrayList<String> suggestions,String word, int mistakenCharNo, int certainMistakeIndex){    	
+    private void getSuggestionsStage2(ArrayList<String> suggestions,String word, int mistakenCharNo, int certainMistakeIndex){    	
     	
     	ArrayList<ArrayList<Integer>> combinations = new ArrayList<ArrayList<Integer>>();
     	for(int i=1;i<=mistakenCharNo;i++)
     		combinations.addAll(combine(word.length(),i));
     	
     	if(certainMistakeIndex>=0)
-	    	for(int i=0;i<combinations.size();i++) {
+	    	for(int i=0;i<combinations.size();i++)
 	    		combinations.get(i).add(certainMistakeIndex);
-	    	}
-		for(int i=0;i<combinations.size();i++) {
+    	
+		for(int i=0;i<combinations.size();i++)
 	    	getSuggestionsStage3(this.root,word.toCharArray(),suggestions,0,combinations.get(i));
-	    	
-		}
     }   
-    public void getSuggestionsStage3(Node<Character> currentNode, char[] originalWord, ArrayList<String> suggestions, int currentIndex, ArrayList<Integer> mistakeIndexes){
+    private void getSuggestionsStage3(Node<Character> currentNode, char[] originalWord, ArrayList<String> suggestions, int currentIndex, ArrayList<Integer> mistakeIndexes){
     	for(;currentIndex<originalWord.length;currentIndex++) {
     		if (mistakeIndexes.contains(currentIndex)) {
-    			for(Node<Character> child:currentNode.getChildren()) {
+    			for(Node<Character> child:currentNode.getChildren())
     				getSuggestionsStage3(child, originalWord, suggestions, currentIndex+1, mistakeIndexes);
-    			}
 				return;
     		}
-    		else if (currentNode.hasChild(originalWord[currentIndex])) {
+    		else if (currentNode.hasChild(originalWord[currentIndex]))
     			currentNode = currentNode.getChild(originalWord[currentIndex]);
-    		}
     		else return;
     	}
     	if (currentNode.hasChild('\0')) {
@@ -156,19 +152,19 @@ public class Trie extends Tree<Character>{
         return list;	
  	}
 
-public ArrayList<ArrayList<Integer>> combine(int n, int k) {
+ 	public ArrayList<ArrayList<Integer>> combine(int n, int k) {
 	ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>();
  
 	if (n <= 0 || n < k)
 		return result;
  
 	ArrayList<Integer> item = new ArrayList<Integer>();
-	dfs(n, k, 0, item, result); // because it need to begin from 1
+	dfs(n, k, 0, item, result); // because it need to begin from 0
  
 	return result;
 }
  
-private void dfs(int n, int k, int start, ArrayList<Integer> item,
+ 	private void dfs(int n, int k, int start, ArrayList<Integer> item,
 		ArrayList<ArrayList<Integer>> res) {
 	if (item.size() == k) {
 		res.add(new ArrayList<Integer>(item));
@@ -181,5 +177,4 @@ private void dfs(int n, int k, int start, ArrayList<Integer> item,
 		item.remove(item.size() - 1);
 	}
 }
-
 }
