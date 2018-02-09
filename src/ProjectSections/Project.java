@@ -1,5 +1,6 @@
 package ProjectSections;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import DataStructures.Tree;
 import DataStructures.Trie;
@@ -20,7 +21,11 @@ public class Project{
     	Trie trie = new Trie();
     	trie.buildLanguageTrie(Trie.readWordList(System.getProperty("user.dir") + "\\src\\External\\EnglishLanguage.txt"));
     	
-    	System.out.println(trie.containsWord("anime"));  	
+    	ArrayList<String> suggestions = trie.getSuggestions("fire", 1,false);
+    	for(String sug: suggestions) {
+    		System.out.println(sug);
+    	}  	
+    	System.out.println(trie.containsWord("anime")); 
     }
     
     public static void main(String[] args) throws IOException{

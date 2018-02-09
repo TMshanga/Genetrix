@@ -24,7 +24,7 @@ public class Tree<T> {
         public ArrayList<Node<T>> getChildren(){return children;}
         
         public void add(Node<T> child) {
-        	if (child.parent!=null)child.parent.remove(child);
+        	if (child.parent!=null) {child.parent.remove(child);}
         	this.children.add(child);
         	child.parent = this;
         }
@@ -75,9 +75,9 @@ public class Tree<T> {
      	public void dfs(Node<T> node, ArrayList<Node<T>> visited)
      	{
      		if(visited ==null)visited = new ArrayList<Node<T>>();
-            visited.add(this);
-     		for (int i = 0; i < this.children.size(); i++) {
-     			Node<T> n= this.children.get(i);
+            visited.add(node);
+     		for (int i = 0; i < node.children.size(); i++) {
+     			Node<T> n= node.children.get(i);
      			if(n!=null && !visited.contains(n))
      			{
      				dfs(n,visited);
