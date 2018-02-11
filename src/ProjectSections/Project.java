@@ -21,7 +21,7 @@ public class Project{
     	Trie trie = new Trie();
     	trie.buildLanguageTrie(Trie.readWordList(System.getProperty("user.dir") + "\\src\\External\\EnglishLanguage.txt"));
     	
-    	ArrayList<String> suggestions = trie.getSuggestions("fire", 1,false);
+    	ArrayList<String> suggestions = trie.getSuggestions("tunice", 1,false);
     	for(String sug: suggestions) {
     		System.out.println(sug);
     	}  	

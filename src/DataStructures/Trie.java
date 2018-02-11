@@ -38,12 +38,10 @@ public class Trie extends Tree<Character>{
     public boolean containsWord(String word) {
     	Node<Character> currentNode = (Node<Character>)this.root;
     	char[] charArr = word.toCharArray();
-    	for(int i=0;i<charArr.length;i++) {
-    		if (currentNode.hasChild(charArr[i])) {
+    	for(int i=0;i<charArr.length;i++)
+    		if (currentNode.hasChild(charArr[i]))
     			currentNode = currentNode.getChild(charArr[i]);
-    		}
     		else return false; 		
-    	}
     	if (currentNode.hasChild('\0')) return true;
     	else return false;
     }
@@ -63,10 +61,10 @@ public class Trie extends Tree<Character>{
 		}			
     }
  	
-    public  void depthFirstPrintTrie(){
-    	depthFirstPrintTrie(root,new ArrayList<Node<Character>>(),new Stack<Character>());
+    public  void depthFirstPrint(){
+    	depthFirstPrint(root,new ArrayList<Node<Character>>(),new Stack<Character>());
     }
-    public  void depthFirstPrintTrie(Node<Character> node, ArrayList<Node<Character>> visited,Stack<Character> stack){
+    private  void depthFirstPrint(Node<Character> node, ArrayList<Node<Character>> visited,Stack<Character> stack){
  		if(stack == null)stack= new Stack<Character>();
  		if(visited == null)visited = new ArrayList<Node<Character>>();
  		
@@ -81,31 +79,22 @@ public class Trie extends Tree<Character>{
  		for (int i = 0; i < node.getChildren().size(); i++) {
  			Node<Character> n= node.getChildren().get(i);
  			if(n!=null && !visited.contains(n))
- 			{
- 				depthFirstPrintTrie(n,visited,stack);
- 			}
+ 				depthFirstPrint(n,visited,stack);
  		}		
- 		if((Character)node.data != null){
+ 		if((Character)node.data != null)
 	 		if((Character)node.data != '\0') 
 	 	 		if(!stack.isEmpty()) stack.pop();
- 		}
  	}
 
     public ArrayList<String> getSuggestions(String word, int mistakenCharNo, boolean checkOtherLengths){
     	ArrayList<String> suggestions = new ArrayList<String>();
-		getSuggestionsStage2(suggestions,word, mistakenCharNo,-1);
-		if(checkOtherLengths){
-	    	for(int i=0;i<word.length();i++) {
-	    		StringBuilder sb = new StringBuilder(word);
-	    		sb.deleteCharAt(i);
-	    		getSuggestionsStage2(suggestions,sb.toString(), mistakenCharNo,-1);	
-	    	}
-	    	for(int i=0;i<word.length();i++) {
-	    		StringBuilder sb = new StringBuilder(word);
-	    		sb.insert(i, 'N');
-	    		getSuggestionsStage2(suggestions,sb.toString(), mistakenCharNo,i);	
-	    	}
+		if(checkOtherLengths) {
+	    	for(int i=0;i<word.length();i++)
+	    		getSuggestionsStage2(suggestions,(new StringBuilder(word).deleteCharAt(i)).toString(), mistakenCharNo,-1);	
+	    	for(int i=0;i<word.length();i++)
+	    		getSuggestionsStage2(suggestions,(new StringBuilder(word).insert(i, '_')).toString(), mistakenCharNo,i);	
 		}
+		getSuggestionsStage2(suggestions,word, mistakenCharNo,-1);
     	return suggestions;
     }      
     private void getSuggestionsStage2(ArrayList<String> suggestions,String word, int mistakenCharNo, int certainMistakeIndex){    	
@@ -114,9 +103,8 @@ public class Trie extends Tree<Character>{
     	for(int i=1;i<=mistakenCharNo;i++)
     		combinations.addAll(combine(word.length(),i));
     	
-    	if(certainMistakeIndex>=0)
-	    	for(int i=0;i<combinations.size();i++)
-	    		combinations.get(i).add(certainMistakeIndex);
+	    for(int i=0;certainMistakeIndex>=0 && i<combinations.size();i++)
+	    	combinations.get(i).add(certainMistakeIndex);
     	
 		for(int i=0;i<combinations.size();i++)
 	    	getSuggestionsStage3(this.root,word.toCharArray(),suggestions,0,combinations.get(i));
@@ -154,23 +142,17 @@ public class Trie extends Tree<Character>{
 
  	public ArrayList<ArrayList<Integer>> combine(int n, int k) {
 	ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>();
- 
-	if (n <= 0 || n < k)
-		return result;
- 
+	if (n <= 0 || n < k) return result;
 	ArrayList<Integer> item = new ArrayList<Integer>();
-	dfs(n, k, 0, item, result); // because it need to begin from 0
- 
+	dfs(n, k, 0, item, result); // because it need to begin from 0 
 	return result;
 }
- 
  	private void dfs(int n, int k, int start, ArrayList<Integer> item,
 		ArrayList<ArrayList<Integer>> res) {
 	if (item.size() == k) {
 		res.add(new ArrayList<Integer>(item));
 		return;
 	}
- 
 	for (int i = start; i <= n; i++) {
 		item.add(i);
 		dfs(n, k, i + 1, item, res);

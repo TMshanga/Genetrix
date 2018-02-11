@@ -31,7 +31,7 @@ public class Tree<T> {
         public void add(T data) {
         	add(new Node<T>(data));   	
         }  
-        public void add(Node<T> child,int index) {
+        public void add(Node<T> child, int index) {
         	if (child.parent!=null)child.parent.remove(child);
         	this.children.ensureCapacity(index+1);
         	this.children.set(index, child);     	
@@ -40,6 +40,15 @@ public class Tree<T> {
         public void add(T data, int index) {
         	add(new Node<T>(data),index);   	
         }     
+        
+        public void shiftAdd(Node<T> child, int index) {
+        	if (child.parent!=null)child.parent.remove(child);
+        	this.children.add(index, child);     	
+        	child.parent = this;  	
+        }
+        public void shiftAdd(T data, int index) {
+        	shiftAdd(new Node<T>(data),index);
+        }
         
         public Node<T> branch(T data){
         	Node<T> child = new Node<T>(data);
