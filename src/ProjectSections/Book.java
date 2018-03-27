@@ -7,13 +7,13 @@ public class Book implements PageInterface {
 	public String title ="";
 
 	@Override
-	public String encode() {
+	public byte[] encode() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void decode() {
+	public void decode(byte[] data) {
 		// TODO Auto-generated method stub
 	}
 
@@ -41,4 +41,12 @@ public class Book implements PageInterface {
 	public void setTitle(String title) {
 		this.title = title;		
 	}
+
+	@Override
+	public boolean isDetached() {
+		return false;
+	}
+
+	@Override
+	public void isDetached(boolean value) {}
 }

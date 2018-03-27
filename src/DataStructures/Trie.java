@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
+import org.apache.commons.text.WordUtils;
+
 import DataStructures.Tree.Node;
 
 public class Trie extends Tree<Character>{
@@ -35,7 +37,7 @@ public class Trie extends Tree<Character>{
 		currentNode.add(new Node<Character>('\0'));
     }
 
-    public boolean containsWord(String word) {
+    public boolean strictlyHasWord(String word) {
     	Node<Character> currentNode = (Node<Character>)this.root;
     	char[] charArr = word.toCharArray();
     	for(int i=0;i<charArr.length;i++)
@@ -45,9 +47,24 @@ public class Trie extends Tree<Character>{
     	if (currentNode.hasChild('\0')) return true;
     	else return false;
     }
+    
+    public boolean hasWord(String word){
+    	String[] wordForms = new String[5];   
+    	word = word.replaceAll("\\p{Punct}+", "");
+    	wordForms[0] = word;
+    	wordForms[1] = WordUtils.capitalize(word);
+    	wordForms[2] = WordUtils.capitalizeFully(word);
+    	wordForms[3] = WordUtils.uncapitalize(word);
+    	wordForms[4] = word.toUpperCase();
+    	
+    	for (String form: wordForms)
+    		if (strictlyHasWord(form)) return true;
+
+    	return false;
+    }
 
     public void removeWord(String word){
-    	if(containsWord(word)) {
+    	if(strictlyHasWord(word)) {
 	  		Node<Character> currentNode = (Node<Character>)root;
 	    	char[] charArr = word.toCharArray();
 			for(int c=0;c<charArr.length;c++){ //the last letter is reached before backtracking

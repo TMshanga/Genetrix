@@ -58,15 +58,16 @@ public class Tree<T> {
 
         public void remove(Node<T> child) 
         {
-        	this.children.remove(child);
+        	if(this.children.remove(child)) child.parent = null;
         }
         public void remove(T data) 
         {
         	for(int i=0;i<this.children.size();i++)
-        		if(this.children.get(i).data == data) {this.children.remove(this.children.get(i));}
+        		if(this.children.get(i).data == data) {this.children.remove(this.children.get(i)); this.children.get(i).parent = null;}
         }
         public void remove(int childIndex) 
         {
+        	children.get(childIndex).parent = null;
         	this.children.remove(childIndex);
         }
        
@@ -81,6 +82,24 @@ public class Tree<T> {
     		return null;
         }
          
+        public Node<T> getAncestor(){
+        	Node<T> node = this;
+        	while(node!=null) {
+        		if (node==node.parent) break;
+        		node = node.parent;
+        	}
+        	return node;
+        }
+        public boolean hasAncestor(Node<T> ancestor){
+        	Node<T> node = this;
+        	while(node!=null) {
+        		node = node.parent;
+        		if(ancestor==node) return true;
+        		else if (node == node.parent) break;
+        	}
+        	return false;
+        }
+        
      	public void dfs(Node<T> node, ArrayList<Node<T>> visited)
      	{
      		if(visited ==null)visited = new ArrayList<Node<T>>();

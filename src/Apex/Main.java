@@ -3,6 +3,7 @@ import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.geometry.Orientation;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
@@ -10,8 +11,10 @@ import javafx.scene.input.MouseEvent;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.util.ArrayList;
 
 import DataStructures.Tree;
+import DataStructures.Trie;
 import ProjectSections.Page;
 import ProjectSections.PageInterface;
 import ProjectSections.Project;
@@ -19,25 +22,22 @@ import ProjectSections.Project;
 public class Main extends Application
 {	
 	static Stage stage = new Stage();
-	static Project currentProject = new Project();
-	static double mousePosX=0, mousePosY=0;
-	static double mousePosChangeX=0, mousePosChangeY=0;
+	public static Project currentProject = new Project();
+	public static PageViewer pageViewer = new PageViewer();
 	
-	public static void main(String[] args)
-	{
-		launch(args);
-	}	
+	static double mousePosX=0, mousePosY=0;
+	public static double mousePosChangeX=0, mousePosChangeY=0;
+	
+	public static Trie englishTrie = new Trie();
+	
+
 	@Override public void start(Stage mainStage) throws Exception
 	{	
+    	englishTrie.buildLanguageTrie(Trie.readWordList(System.getProperty("user.dir") + "\\src\\External\\EnglishLanguage.txt"));
+		
 		mainStage = stage;
 		currentProject = new Project("Project Name");
-		Tree.Node<PageInterface> page1 = new Tree.Node<PageInterface>(new Page("Page 1"));
-		currentProject.pageTree.root.add(page1);
-		currentProject.pageTree.root.add(new Tree.Node<PageInterface>(new Page("Page 2")));
-		currentProject.pageTree.root.add(new Tree.Node<PageInterface>(new Page("Page 3")));
-		currentProject.pageTree.root.add(new Tree.Node<PageInterface>(new Page("Page 4")));
-
-
+		currentProject.pageTree.root.add(new Page("New Page"));
 		
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	    
@@ -49,8 +49,9 @@ public class Main extends Application
 		HBox sep = new HBox();
 		Separator sepa = new Separator();
 		sepa.setOrientation(Orientation.VERTICAL);
-		sep.getChildren().add(sepa);
-		borderPane.setCenter(sep);
+		sep.getChildren().addAll(sepa);
+				
+		borderPane.setCenter(pageViewer.viewerPane);
 		
 		Scene scene = new Scene(borderPane,screenSize.getWidth()-500,screenSize.getHeight()-300);	
 		scene.addEventFilter(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
@@ -67,6 +68,8 @@ public class Main extends Application
 		mainStage.setTitle("Genetrix");
 		mainStage.show();
 	}
-	
-	
+	public static void main(String[] args)
+	{
+		launch(args);
+	}	
 }

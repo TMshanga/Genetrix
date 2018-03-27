@@ -6,7 +6,9 @@ public interface PageInterface
 	public String getTitle();
 	public void setTitle(String title);
 	public String getIcon();
-	public String encode();
-	public void decode();
+	public byte[] encode();
+	public void decode(byte[] data);
 	public Pane BuildPane();
+	public boolean isDetached();
+	public void isDetached(boolean value);
 }
