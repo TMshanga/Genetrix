@@ -1,13 +1,12 @@
-    var sel, range;
+    var range;
     var replacementText = "%s";
-    if (window.getSelection) {
-        sel = window.getSelection();
-        if (sel.rangeCount) {
-            range = sel.getRangeAt(0);
+    if (window.getSelection().rangeCount > 0) {
+    		for(var i =0; i<window.getSelection().rangeCount; i++){
+    			window.getSelection().getRangeAt(i).deleteContents();
+    		}
+            range = window.getSelection().getRangeAt(0);
             range.deleteContents();
-            var div = document.createElement("span");
-		 	div.innerHTML = replacementText;
-			range.insertNode(div);}
-    } else if (document.selection && document.selection.createRange) {
-        range = document.selection.createRange();
-        range.text = replacementText; }
+            var span = document.createElement("span");
+		 	span.innerHTML = replacementText;
+			range.insertNode(span);
+    }

@@ -1,15 +1,16 @@
-package DataStructures;
+package dataStructures;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Tree<T> {
     public Node<T> root;
 
     public Tree(T rootData) {
-        root = new Node<T>();
-        root.data = rootData;
-        root.parent = root;
-        root.children = new ArrayList<Node<T>>();
+        setRoot(rootData);
+    }
+    public Tree(Node<T> root) {
+        setRoot(root);
     }
     public static class Node<T> {
     	public T data;
@@ -34,7 +35,7 @@ public class Tree<T> {
         public void add(Node<T> child, int index) {
         	if (child.parent!=null)child.parent.remove(child);
         	this.children.ensureCapacity(index+1);
-        	this.children.set(index, child);     	
+        	this.children.add(index, child);     	
         	child.parent = this;  	
         }
         public void add(T data, int index) {
@@ -70,6 +71,11 @@ public class Tree<T> {
         	children.get(childIndex).parent = null;
         	this.children.remove(childIndex);
         }
+        public void removeSelf() {
+        	if(parent != null)
+        		parent.getChildren().remove(this);
+        	parent = null;
+        }
        
         public boolean hasChild(T nodeValue) {
         	for(Node<T> child: this.children) 
@@ -95,9 +101,25 @@ public class Tree<T> {
         	while(node!=null) {
         		node = node.parent;
         		if(ancestor==node) return true;
+        		else if (node == null) break;
         		else if (node == node.parent) break;
         	}
         	return false;
+        }
+        
+        public ArrayList<Integer> getAddress(){
+        	ArrayList<Integer> address = new ArrayList<Integer>();
+        	Node<T> node = this;
+        	while(node!=null) {
+        		if(node.parent==null) return null;
+        		if (node==node.parent) {
+            		address.add(0,0);
+        			break;
+        		}
+        		address.add(0,node.parent.getChildren().indexOf(node));
+        		node = node.parent;
+        	}
+        	return address;
         }
         
      	public void dfs(Node<T> node, ArrayList<Node<T>> visited)
@@ -114,10 +136,29 @@ public class Tree<T> {
      	}
     }    
     
+    public void setRoot( Node<T> node) {
+    	root = node;
+    	node.parent = root;
+    	node.children = new ArrayList<Node<T>>();
+    }
+    public void setRoot(T rootData) {
+        setRoot(new Node<T>(rootData));
+    }
+    
     public Node<T> getNode(ArrayList<Integer> address){
     	Node<T> currentNode = this.root;
     	for(int i=1;i<address.size();i++)
     		currentNode = currentNode.children.get(address.get(i));
     	return currentNode;
+    }
+    public void setNode(ArrayList<Integer> address, Node<T> node) {
+    	if(address.size()==1 && address.get(0)==0) {
+    		setRoot(node);
+    		return;
+    	}
+    	Node<T> currentNode = this.root;
+    	for(int i=1;i<address.size()-1;i++)
+    		currentNode = currentNode.children.get(address.get(i));
+		currentNode.add(node, address.get(address.size()-1));
     }
 }	

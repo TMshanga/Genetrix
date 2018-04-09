@@ -1,8 +1,8 @@
 eclipse.preferences.version=1
-encoding//src/Apex/ContentsPage.java=UTF-8
-encoding//src/Apex/Main.java=UTF-8
-encoding//src/Apex/TopMenu.java=UTF-8
-encoding//src/ProjectSections/Book.java=UTF-8
-encoding//src/ProjectSections/Folder.java=UTF-8
-encoding//src/ProjectSections/Page.java=UTF-8
-encoding//src/ProjectSections/Project.java=UTF-8
+encoding//src/main/ContentsPage.java=UTF-8
+encoding//src/main/Main.java=UTF-8
+encoding//src/main/TopMenu.java=UTF-8
+encoding//src/projectSections/BasicPage.java=UTF-8
+encoding//src/projectSections/Book.java=UTF-8
+encoding//src/projectSections/Folder.java=UTF-8
+encoding//src/projectSections/Project.java=UTF-8

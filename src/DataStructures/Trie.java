@@ -1,15 +1,17 @@
-package DataStructures;
+package dataStructures;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
 import org.apache.commons.text.WordUtils;
 
-import DataStructures.Tree.Node;
+import dataStructures.Tree.Node;
 
 public class Trie extends Tree<Character>{
 
@@ -18,7 +20,7 @@ public class Trie extends Tree<Character>{
 	}
 	
     public void buildLanguageTrie(ArrayList<String> wordList) {
-    	this.root = new Node<Character>('\0');
+    	this.setRoot(new Node<Character>('\0'));
     	for(int i=0;i<wordList.size();i++)
     		addWord(wordList.get(i));
     }
@@ -102,7 +104,12 @@ public class Trie extends Tree<Character>{
 	 		if((Character)node.data != '\0') 
 	 	 		if(!stack.isEmpty()) stack.pop();
  	}
-
+    public ArrayList<String> getSuggestions(String word){
+    	int mistakenCharNo = (word.length()<=6)?1:(word.length()<=8)?2:3;
+    	boolean checkOtherLengths = (word.length()<=7)?false:true;
+    	return getSuggestions(word, mistakenCharNo, checkOtherLengths);
+    }
+    
     public ArrayList<String> getSuggestions(String word, int mistakenCharNo, boolean checkOtherLengths){
     	ArrayList<String> suggestions = new ArrayList<String>();
 		if(checkOtherLengths) {
@@ -147,8 +154,9 @@ public class Trie extends Tree<Character>{
     	}
     }
       
- 	public static ArrayList<String> readWordList(String directory) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(directory));
+ 	public ArrayList<String> readWordList(String file) throws IOException { 		
+ 		InputStream in = getClass().getResourceAsStream("/external/" + file); 
+ 		BufferedReader br = new BufferedReader(new InputStreamReader(in));
         ArrayList<String> list = new ArrayList<String>();
         String line;
         while ((line = br.readLine()) != null)

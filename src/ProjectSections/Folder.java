@@ -1,26 +1,94 @@
-package ProjectSections;
+package projectSections;
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+
+import com.google.common.primitives.Bytes;
+import com.google.common.primitives.Ints;
+
+import dataStructures.Tree;
+import dataStructures.Tree.Node;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import main.Main;
 
-public class Folder implements PageInterface{
-	public String content = "ABCDEFG";
+public class Folder implements Page{
 	public String title ="";
 
 	@Override
 	public byte[] encode() {
-		// TODO Auto-generated method stub
-		return null;
+		byte[] data = Ints.toByteArray(Page.pageTypes.Folder.toInt());
+		try {
+			data = Bytes.concat(data,title.getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		return data;
 	}
 
 	@Override
-	public void decode(byte[] data) {
-		// TODO Auto-generated method stub
+	public void decode(byte[] data, int offset, int length) {
+		try {
+			title = new String(data, offset+4, length-4,"UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public Pane BuildPane() {
-		// TODO Auto-generated method stub
 		return new BorderPane();
+	}
+	
+	public Pane BuildPane(Node<Page> folderNode) {
+		ListView<FauxString> listView = new ListView<>();
+		Button refresh = new Button("⟳");
+		VBox vbox = new VBox(listView,refresh);
+		
+		for (Node<Page> child: folderNode.getChildren()) {
+			listView.getItems().add(new FauxString(child.data.getTitle(),child));
+		}			
+		listView.getSelectionModel().selectedItemProperty().addListener((obsv,oldV,newV)->{
+			if (newV!=null) {
+				if(newV.page.hasAncestor(Main.currentProject.pageTree.root)) {
+					if(listView.getScene() != Main.stage.getScene())
+						Main.pageViewer.projectPage(newV.page);
+					else
+						Main.pageViewer.addTab(newV.page);
+				}
+				else {
+					listView.getItems().clear();
+					for (Node<Page> child: folderNode.getChildren()) {
+						listView.getItems().add(new FauxString(child.data.getTitle(),child));
+					}	
+				}
+			}
+		});
+		
+		refresh.setOnAction((event)->{
+			listView.getItems().clear();
+			for (Node<Page> child: folderNode.getChildren()) {
+				listView.getItems().add(new FauxString(child.data.getTitle(),child));
+			}	
+		});
+		vbox.setAlignment(Pos.TOP_CENTER);
+		return vbox;
+	}
+	
+	class FauxString{
+		public Tree.Node<Page> page;
+		public String string;
+		FauxString(String string, Tree.Node<Page> page){
+			this.string = string;
+			this.page = page;
+		}
+		@Override
+		public String toString(){
+			return string;
+		}
 	}
 
 	@Override
@@ -43,10 +111,13 @@ public class Folder implements PageInterface{
 	}
 
 	@Override
-	public boolean isDetached() {
-		return false;
+	public Object getContent() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
-	public void isDetached(boolean value) {}
+	public void setContent(Object object) {
+		// TODO Auto-generated method stub	
+	}
 }
