@@ -29,7 +29,7 @@ import dataStructures.Trie;
 
 public class Main extends Application
 {	
-	public static String styleFile = "styles/modena/modena.css";
+	public static String styleFile = TopMenu.styles.Modena.toString();
 	
 	public static Stage stage = new Stage();
 	public static Project currentProject = new Project();
@@ -85,7 +85,7 @@ public class Main extends Application
 			}
 		});
 		mainStage.setScene(scene);
-		mainStage.setTitle("Genetrix ver-1.5.3");
+		mainStage.setTitle("Genetrix ver-1.5.4");
 		mainStage.show();
 		loadPreferences();
 	}

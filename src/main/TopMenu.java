@@ -36,6 +36,22 @@ public class TopMenu {
 	File currentFileDir;
 	public File currentImageFileDir;
 	
+	public static enum styles {
+	    Modena("Styles/modena/modena.css"), 
+	    ModenaDark("Styles/modena_dark/modena_dark.css") ,
+	    Bootstrap("Styles/bootstrap/bootstrap3.css"), 
+	    Oscar("Styles/simple/oscar.css"), 
+	    Luke("Styles/simple/luke.css"), 
+	    Vincent("Styles/simple/vincent.css");
+	    private String strVal;
+	    styles(String strVal) {
+	        this.strVal = strVal;
+	    }
+	    public String toString() {
+	        return strVal;
+	    }
+	}
+	
 	public MenuBar getMainMenu(){
 		MenuBar  menuBar = new MenuBar();	
 		
@@ -68,12 +84,12 @@ public class TopMenu {
 		saveAs.setOnAction((actionEvent) -> {saveAs();});
 		load.setOnAction((actionEvent) -> {load();});
 		export.setOnAction((actionEvent) -> {export();});
-		modena.setOnAction((actionEvent) -> {Main.restyle("Styles/modena/modena.css");});
-		modenaDark.setOnAction((actionEvent) -> {Main.restyle("Styles/modena_dark/modena_dark.css");});
-		bootstrap.setOnAction((actionEvent) -> {Main.restyle("Styles/bootstrap/bootstrap3.css");});
-		oscar.setOnAction((actionEvent) -> {Main.restyle("Styles/simple/oscar.css");});
-		luke.setOnAction((actionEvent) -> {Main.restyle("Styles/simple/luke.css");});
-		vincent.setOnAction((actionEvent) -> {Main.restyle("Styles/simple/vincent.css");});	
+		modena.setOnAction((actionEvent) -> {Main.restyle(styles.Modena.toString());});
+		modenaDark.setOnAction((actionEvent) -> {Main.restyle(styles.ModenaDark.toString());});
+		bootstrap.setOnAction((actionEvent) -> {Main.restyle(styles.Bootstrap.toString());});
+		oscar.setOnAction((actionEvent) -> {Main.restyle(styles.Oscar.toString());});
+		luke.setOnAction((actionEvent) -> {Main.restyle(styles.Luke.toString());});
+		vincent.setOnAction((actionEvent) -> {Main.restyle(styles.Vincent.toString());});	
 		return menuBar;
 	}
 	

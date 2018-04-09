@@ -33,6 +33,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import main.ContentsPage;
 import main.Main;
+import main.TopMenu;
 import main.ContentsPage.MyTreeItem;
 
 import com.google.common.base.CharMatcher;
@@ -150,10 +151,10 @@ public class BasicPage implements Page {
 					+ "document.head.appendChild(div);");
 		if ((boolean)webView.getEngine().executeScript("document.getElementById('pageStyle') == null")) {	
 			String backgroundSetting = "/*Background*//*/Background*/";	
-			if (Main.styleFile.contains("modena_dark.css")) {
+			if (Main.styleFile.equals(TopMenu.styles.ModenaDark.toString())) {
 				backgroundSetting = "/*Background*/body {background-color: rgb(20, 20, 20); color: white;} table, th, td {outline: 0.5px solid white;}/*/Background*/";
 			}	
-			if (Main.styleFile.contains("vincent.css")) {
+			else if (Main.styleFile.equals(TopMenu.styles.Vincent.toString())) {
 				backgroundSetting = "/*Background*/body {background-color: rgb(0, 0, 0); color: white;} table, th, td {outline: 0.5px solid white;}/*/Background*/";
 			}	
 			webView.getEngine().executeScript("var style = document.createElement('style');"
