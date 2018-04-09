@@ -21,6 +21,7 @@ import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.input.InputEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -93,7 +94,7 @@ public class BasicPage implements Page {
 
 	@Override public Pane BuildPane() {
 		Main.currentProject.readyAllImages();
-		return new Pane(htmlEditor);
+		return new BorderPane(htmlEditor);
 	}	
 
 	public void initHTMLEditor() {
