@@ -4,21 +4,15 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.UUID;
 
 import javax.imageio.ImageIO;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -26,8 +20,6 @@ import com.google.common.io.ByteStreams;
 
 import dataStructures.Tree.Node;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -143,11 +135,11 @@ public class TopMenu {
         if(directory == null){ System.out.println("No Directory selected");}
         else{
         	HashMap<Node<Page>,Pair<String,String>> exportMap = new HashMap<>();
-        	initExportMap(Main.currentProject.pageTree.root,exportMap);
+        	initExportMap(Main.currentProject.pageTree.getRoot(),exportMap);
         	for(Node<Page> page: exportMap.keySet()) {
         		String content ="";
         		if(page.data instanceof BasicPage) {
-        			content = (String)page.data.getContent();
+        			content = ((BasicPage)page.data).htmlEditor.getHtmlText();
         			content = content.replace("contenteditable=\"true\"","");	            		
         			String[] allKeys = StringUtils.substringsBetween(content, "<button onclick=\"pushPage(this.name)\" name=\"", "\" type=\"button\" id=\"pageLink\">");
         			if(allKeys !=null)
@@ -168,7 +160,7 @@ public class TopMenu {
         			content += "</ul></body></html>";
         		}
         		
-    			if(page.getParent() == Main.currentProject.pageTree.root) {
+    			if(page.getParent() == Main.currentProject.pageTree.getRoot()) {
     				if(content.contains("</head>"))
     					content = content.substring(0, content.indexOf("</head>"))+"<div><a href=../Root.html>"+"\n<< Parent Page"+"</a></div>" + content.substring(content.indexOf("</head>"));
     				else
@@ -182,7 +174,7 @@ public class TopMenu {
     			}   
     			exportMap.put(page, new Pair<>(exportMap.get(page).getKey(),content));
         	}
-        	File mainDir = new File(FilenameUtils.concat(directory.toString(), Main.currentProject.pageTree.root.data.getTitle()));
+        	File mainDir = new File(FilenameUtils.concat(directory.toString(), Main.currentProject.pageTree.getRoot().data.getTitle()));
         	File pageDir = new File(FilenameUtils.concat(mainDir.toString(), "pages"));
         	File dataDir = new File(FilenameUtils.concat(mainDir.toString(), "data"));
     		if(!mainDir.exists()) mainDir.mkdir();
@@ -204,7 +196,7 @@ public class TopMenu {
 			try {
 				BufferedWriter out = new BufferedWriter(new FileWriter(FilenameUtils.concat(mainDir.toString(), "Root.html")));
 				StringBuilder contentsPage = new StringBuilder();
-				contentsPageToHtml(exportMap,Main.currentProject.pageTree.root,contentsPage);
+				contentsPageToHtml(exportMap,Main.currentProject.pageTree.getRoot(),contentsPage);
 				out.write("<!DOCTYPE html><html><body>" + contentsPage.toString() + "</html></body>");
 				out.close();
 			} catch (IOException e) {e.printStackTrace();}

@@ -20,6 +20,4 @@ public interface Page
 	public byte[] encode();
 	public void decode(byte[] data, int offset, int length);
 	public Pane BuildPane();
-	public Object getContent();
-	public void setContent(Object object);
 }

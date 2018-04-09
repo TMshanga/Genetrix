@@ -1,17 +1,11 @@
 package dataStructures;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Stack;
-import java.util.stream.IntStream;
 
 import org.apache.commons.text.WordUtils;
-
-import dataStructures.Tree.Node;
 
 public class Trie extends Tree<Character>{
 
@@ -29,7 +23,7 @@ public class Trie extends Tree<Character>{
   		for(String word:words) addWord(word);
     }
     public void addWord(String word) {
-  		Node<Character> currentNode = root;
+  		Node<Character> currentNode = getRoot();
     	char[] charArr = word.toCharArray();
 		for(int c=0;c<charArr.length;c++){
 			if(!currentNode.hasChild(charArr[c]))
@@ -40,7 +34,7 @@ public class Trie extends Tree<Character>{
     }
 
     public boolean strictlyHasWord(String word) {
-    	Node<Character> currentNode = (Node<Character>)this.root;
+    	Node<Character> currentNode = (Node<Character>)getRoot();
     	char[] charArr = word.toCharArray();
     	for(int i=0;i<charArr.length;i++)
     		if (currentNode.hasChild(charArr[i]))
@@ -51,13 +45,11 @@ public class Trie extends Tree<Character>{
     }
     
     public boolean hasWord(String word){
-    	String[] wordForms = new String[5];   
+    	String[] wordForms = new String[3];   
     	word = word.replaceAll("\\p{Punct}+", "");
     	wordForms[0] = word;
-    	wordForms[1] = WordUtils.capitalize(word);
-    	wordForms[2] = WordUtils.capitalizeFully(word);
-    	wordForms[3] = WordUtils.uncapitalize(word);
-    	wordForms[4] = word.toUpperCase();
+    	wordForms[1] = WordUtils.uncapitalize(word);
+    	wordForms[2] = word.toUpperCase();
     	
     	for (String form: wordForms)
     		if (strictlyHasWord(form)) return true;
@@ -67,7 +59,7 @@ public class Trie extends Tree<Character>{
 
     public void removeWord(String word){
     	if(strictlyHasWord(word)) {
-	  		Node<Character> currentNode = (Node<Character>)root;
+	  		Node<Character> currentNode = (Node<Character>)getRoot();
 	    	char[] charArr = word.toCharArray();
 			for(int c=0;c<charArr.length;c++){ //the last letter is reached before backtracking
 				currentNode = currentNode.getChild(charArr[c]);
@@ -79,31 +71,7 @@ public class Trie extends Tree<Character>{
 			}	
 		}			
     }
- 	
-    public  void depthFirstPrint(){
-    	depthFirstPrint(root,new ArrayList<Node<Character>>(),new Stack<Character>());
-    }
-    private  void depthFirstPrint(Node<Character> node, ArrayList<Node<Character>> visited,Stack<Character> stack){
- 		if(stack == null)stack= new Stack<Character>();
- 		if(visited == null)visited = new ArrayList<Node<Character>>();
- 		
- 		if((Character)node.data != null){
-	 		if((Character)node.data == '\0') {
-	 			String arr = stack.toString().replace(",", "").replace("[", "").replace("]", "").replace(" ", "");
-	 	 		System.out.println(arr);
-	 		}
-	 		else stack.push(node.data);
- 		}	 		
-        visited.add(node);
- 		for (int i = 0; i < node.getChildren().size(); i++) {
- 			Node<Character> n= node.getChildren().get(i);
- 			if(n!=null && !visited.contains(n))
- 				depthFirstPrint(n,visited,stack);
- 		}		
- 		if((Character)node.data != null)
-	 		if((Character)node.data != '\0') 
-	 	 		if(!stack.isEmpty()) stack.pop();
- 	}
+ 
     public ArrayList<String> getSuggestions(String word){
     	int mistakenCharNo = (word.length()<=6)?1:(word.length()<=8)?2:3;
     	boolean checkOtherLengths = (word.length()<=7)?false:true;
@@ -125,13 +93,13 @@ public class Trie extends Tree<Character>{
     	
     	ArrayList<ArrayList<Integer>> combinations = new ArrayList<ArrayList<Integer>>();
     	for(int i=1;i<=mistakenCharNo;i++)
-    		combinations.addAll(combine(word.length(),i));
+    		combinations.addAll(combination(word.length(),i));
     	
 	    for(int i=0;certainMistakeIndex>=0 && i<combinations.size();i++)
 	    	combinations.get(i).add(certainMistakeIndex);
     	
 		for(int i=0;i<combinations.size();i++)
-	    	getSuggestionsStage3(this.root,word.toCharArray(),suggestions,0,combinations.get(i));
+	    	getSuggestionsStage3(getRoot(),word.toCharArray(),suggestions,0,combinations.get(i));
     }   
     private void getSuggestionsStage3(Node<Character> currentNode, char[] originalWord, ArrayList<String> suggestions, int currentIndex, ArrayList<Integer> mistakeIndexes){
     	for(;currentIndex<originalWord.length;currentIndex++) {
@@ -155,17 +123,16 @@ public class Trie extends Tree<Character>{
     }
       
  	public ArrayList<String> readWordList(String file) throws IOException { 		
- 		InputStream in = getClass().getResourceAsStream("/external/" + file); 
- 		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+ 		BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/external/" + file)));
         ArrayList<String> list = new ArrayList<String>();
         String line;
-        while ((line = br.readLine()) != null)
+        while ((line = reader.readLine()) != null)
            list.add(line);
-        br.close();
+        reader.close();
         return list;	
  	}
 
- 	public ArrayList<ArrayList<Integer>> combine(int n, int k) {
+ 	public ArrayList<ArrayList<Integer>> combination(int n, int k) {
 	ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>();
 	if (n <= 0 || n < k) return result;
 	ArrayList<Integer> item = new ArrayList<Integer>();

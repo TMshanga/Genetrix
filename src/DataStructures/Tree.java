@@ -1,10 +1,9 @@
 package dataStructures;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Tree<T> {
-    public Node<T> root;
+    private Node<T> root;
 
     public Tree(T rootData) {
         setRoot(rootData);
@@ -136,14 +135,18 @@ public class Tree<T> {
      	}
     }    
     
+    public void setRoot(T rootData) {
+        setRoot(new Node<T>(rootData));
+    }
     public void setRoot( Node<T> node) {
     	root = node;
     	node.parent = root;
     	node.children = new ArrayList<Node<T>>();
     }
-    public void setRoot(T rootData) {
-        setRoot(new Node<T>(rootData));
-    }
+    
+    public Node<T> getRoot() {
+    	return root;
+    }    
     
     public Node<T> getNode(ArrayList<Integer> address){
     	Node<T> currentNode = this.root;

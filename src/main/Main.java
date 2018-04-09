@@ -1,16 +1,11 @@
 package main;
 import javafx.application.Application;
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.geometry.Orientation;
 import javafx.stage.Stage;
 import projectSections.BasicPage;
-import projectSections.Page;
 import projectSections.Project;
-import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -19,22 +14,17 @@ import javafx.scene.input.MouseEvent;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
-import java.util.ArrayList;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import dataStructures.Tree;
 import dataStructures.Trie;
 
 public class Main extends Application
@@ -58,7 +48,7 @@ public class Main extends Application
 		Main.languageTrie.buildLanguageTrie(Main.languageTrie.readWordList("EnglishLanguage.txt"));
 		mainStage = stage;
 		currentProject = new Project("Project Name");
-		currentProject.pageTree.root.add(new BasicPage("New Page"));
+		currentProject.pageTree.getRoot().add(new BasicPage("New Page"));
 		
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	    
@@ -95,7 +85,7 @@ public class Main extends Application
 			}
 		});
 		mainStage.setScene(scene);
-		mainStage.setTitle("Genetrix ver-1.5.2");
+		mainStage.setTitle("Genetrix ver-1.5.3");
 		mainStage.show();
 		loadPreferences();
 	}
@@ -112,9 +102,7 @@ public class Main extends Application
 		if(topMenu.currentFileDir !=null) prefs.append("<saveDir>" + topMenu.currentFileDir + "<saveDir>");
 		if(topMenu.currentFileDir !=null) prefs.append("<imageDir>" + topMenu.currentImageFileDir + "<imageDir>");
 		
-		String jarDir = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-		jarDir = FilenameUtils.concat((new File(jarDir)).getParentFile().getPath().replace("\\", "/"),"data");
-		try {jarDir = URLDecoder.decode(jarDir, "UTF-8");} catch (UnsupportedEncodingException e) {e.printStackTrace();}
+		String jarDir = FilenameUtils.concat(getJarDir(),"data");
 		if(!new File(jarDir).exists()) new File(jarDir).mkdir();
 		
 		try {
@@ -124,9 +112,7 @@ public class Main extends Application
 		} catch (IOException e) {e.printStackTrace();}
 	}
 	public static void loadPreferences() {
-		String jarDir = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-		jarDir = FilenameUtils.concat((new File(jarDir)).getParentFile().getPath().replace("\\", "/"),"data/preferences.ini");
-		try {jarDir = URLDecoder.decode(jarDir, "UTF-8");} catch (UnsupportedEncodingException e) {e.printStackTrace();}
+		String jarDir = FilenameUtils.concat(getJarDir(),"data/preferences.ini");
 		if(new File(jarDir).exists()) {
 			try {
 				String prefs = new String(Files.readAllBytes(new File(jarDir).toPath()));
@@ -136,6 +122,16 @@ public class Main extends Application
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+	public static String getJarDir() {
+		try {
+			String jarDir = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+			jarDir = (new File(jarDir)).getParentFile().getPath();
+			return URLDecoder.decode(jarDir, "UTF-8").replace("\\", "/");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return "..";
 		}
 	}
 	

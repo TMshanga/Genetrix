@@ -1,6 +1,5 @@
 package projectSections;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
@@ -53,9 +52,9 @@ public class Folder implements Page{
 		}			
 		listView.getSelectionModel().selectedItemProperty().addListener((obsv,oldV,newV)->{
 			if (newV!=null) {
-				if(newV.page.hasAncestor(Main.currentProject.pageTree.root)) {
+				if(newV.page.hasAncestor(Main.currentProject.pageTree.getRoot())) {
 					if(listView.getScene() != Main.stage.getScene())
-						Main.pageViewer.projectPage(newV.page);
+						Main.pageViewer.detachPage(newV.page);
 					else
 						Main.pageViewer.addTab(newV.page);
 				}
@@ -108,16 +107,5 @@ public class Folder implements Page{
 	@Override
 	public void setTitle(String title) {
 		this.title = title;
-	}
-
-	@Override
-	public Object getContent() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setContent(Object object) {
-		// TODO Auto-generated method stub	
 	}
 }

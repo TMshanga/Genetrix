@@ -2,9 +2,7 @@ package projectSections;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.concurrent.Worker.State;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
@@ -21,19 +19,14 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
-import javafx.scene.image.PixelReader;
-import javafx.scene.image.WritableImage;
 import javafx.scene.input.InputEvent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.web.HTMLEditor;
+import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -43,20 +36,17 @@ import main.Main;
 import main.ContentsPage.MyTreeItem;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.io.Resources;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 
 import dataStructures.Tree;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -64,31 +54,27 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.StringUtils;
 
 public class BasicPage implements Page {
 	public String title ="";
     String JSReplaceSel = "",JSReplaceSelWithHTML = "",JSGetSel ="", JSAddColumn="";
-    public String content = "";
-    public boolean detached = false;
+    public HTMLEditor htmlEditor;
     String imageFilters ="";
-    int[] cropDims = new int[] {0,0,0,0};
-    
-    LinkedList<String>  undoList = new LinkedList<>();
-    LinkedList<String>  redoList = new LinkedList<>();
     
 	@Override
 	public byte[] encode() {
 		try {
 		byte[] titleData = title.getBytes("UTF-8");
 		byte[] data = Bytes.concat(Ints.toByteArray(titleData.length),titleData);
-		data = Bytes.concat(data,content.getBytes("UTF-8"));
+		data = Bytes.concat(data,htmlEditor.getHtmlText().getBytes("UTF-8"));
 		data = Bytes.concat(Ints.toByteArray(Page.pageTypes.BasicPage.toInt()),data);
 		return data;
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
+			return null;
 		}
-		return null;
 	}
 
 	@Override
@@ -96,34 +82,26 @@ public class BasicPage implements Page {
 		try {
 			int titleLen = ByteBuffer.wrap(data, offset+4, 4).getInt();
 			title = new String(data,offset+8,titleLen,"UTF-8");
-			content = new String(data, offset+8 + titleLen,length-(8 + titleLen),"UTF-8");
-			String jarDir = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-			jarDir = (new File(jarDir)).getParentFile().getPath().replace("\\", "/");
-			try {jarDir = URLDecoder.decode(jarDir, "UTF-8");} catch (UnsupportedEncodingException e) {e.printStackTrace();}
-			content = content.replaceAll("<img src=\"file:\\/\\/"+".*"+"\\/data\\/IMG","<img src=\"file://"+ jarDir +"/data/IMG");
+			String htmlText = new String(data, offset+8 + titleLen,length-(8 + titleLen),"UTF-8");
+			htmlText = htmlText.replaceAll("<img src=\"file:\\/\\/"+".*"+"\\/data\\/IMG","<img src=\"file://"+ Main.getJarDir() +"/data/IMG");
+			htmlEditor.setHtmlText(htmlText);
 		}catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
 	}
 
-	@Override public BorderPane BuildPane() {
+	@Override public Pane BuildPane() {
 		Main.currentProject.readyAllImages();
-		BorderPane borderPane = new BorderPane();
-	    HTMLEditor htmlEditor = new HTMLEditor();
-		initHTMLEditor(htmlEditor);
-		borderPane.setCenter(htmlEditor);
-		
-		return borderPane;
-	}
+		return new Pane(htmlEditor);
+	}	
 
-	public void initHTMLEditor(HTMLEditor htmlEditor) {
-		htmlEditor.setHtmlText(content);
-		initHtmlText(htmlEditor);
+	public void initHTMLEditor() {
+	    htmlEditor = new HTMLEditor();
+		initHtmlText();
 		
 		htmlEditor.addEventFilter(InputEvent.ANY, new EventHandler<InputEvent>() {
 			@Override public void handle(InputEvent arg0) {
-				initHtmlText(htmlEditor);
-				content = htmlEditor.getHtmlText();
+				initHtmlText();
 			}
 		});
 		htmlEditor.addEventFilter(MouseEvent.MOUSE_RELEASED, new EventHandler<MouseEvent>() {
@@ -138,26 +116,26 @@ public class BasicPage implements Page {
 						if(Main.currentProject.pageMap.containsKey(refId))
 							if(Main.currentProject.pageMap.get(refId).getAncestor()!=null) {
 								if(htmlEditor.getScene() != Main.stage.getScene())
-									Main.pageViewer.projectPage(Main.currentProject.pageMap.get(refId));
+									Main.pageViewer.detachPage(Main.currentProject.pageMap.get(refId));
 								else
 									Main.pageViewer.addTab(Main.currentProject.pageMap.get(refId));
 								webView.getEngine().executeScript("document.getElementById('pageFront').innerHTML = -1;");
 							}
 							else {
-								delinkSelection(htmlEditor);
+								delinkSelection();
 								Main.currentProject.pageMap.remove(refId);
 							}
 						else {
-							delinkSelection(htmlEditor);
+							delinkSelection();
 						}
 					}
 				}
 			}});
-		initTopToolBar(htmlEditor);
-		initBottomToolBar(htmlEditor);
+		initTopToolBar();
+		initBottomToolBar();
 	}
 	
-	public void initHtmlText(HTMLEditor htmlEditor) {
+	public void initHtmlText() {
         WebView webView = (WebView)htmlEditor.lookup("WebView"); 
 		if ((boolean)webView.getEngine().executeScript("document.getElementById('pageScript') == null"))
 			webView.getEngine().executeScript("var script = document.createElement('script');"
@@ -188,16 +166,16 @@ public class BasicPage implements Page {
 		}
 	}
 	
-	public void initBottomToolBar(HTMLEditor htmlEditor) {
+	public void initBottomToolBar() {
 	    ToolBar bar = (ToolBar)htmlEditor.lookup(".bottom-toolbar");
 	    
 	    MenuItem extendRow = new MenuItem("Extend Row ⍗");	    
 	    
 	    extendRow.setOnAction((event)->{
-	        WebView webView = (WebView)htmlEditor.lookup("WebView");
-	        if((boolean)webView.getEngine().executeScript("window.getSelection().rangeCount > 0")) {
-		    	String selection =  (String)webView.getEngine().executeScript("window.getSelection().toString();");
-				webView.getEngine().executeScript(String.format(JSReplaceSelWithHTML,String.format("<!--startSel-->%s<!--endSel-->",selection)));
+	        WebEngine webEngine = ((WebView)htmlEditor.lookup("WebView")).getEngine();
+	        if((boolean)webEngine.executeScript("window.getSelection().rangeCount > 0")) {
+		    	String selection =  (String)webEngine.executeScript("window.getSelection().toString();");
+		    	webEngine.executeScript(String.format(JSReplaceSelWithHTML,String.format("<!--startSel-->%s<!--endSel-->",selection)));
 				String htmlText = htmlEditor.getHtmlText();
 
 				int endIndex = htmlText.indexOf("<!--endSel-->");
@@ -221,7 +199,9 @@ public class BasicPage implements Page {
 	    bar.getItems().add(menuBar);
 	}
 
-	public void initTopToolBar(HTMLEditor htmlEditor) {
+	public void initTopToolBar() {
+    	WebEngine webEngine = ((WebView)htmlEditor.lookup("WebView")).getEngine(); 
+		
 	    ToolBar bar = (ToolBar)htmlEditor.lookup(".top-toolbar");
 	    MenuItem link = new MenuItem("Link ⛓");
 	    MenuItem delink = new MenuItem("Delink ⤫");
@@ -235,7 +215,6 @@ public class BasicPage implements Page {
 	    MenuItem spanish = new MenuItem("Español");
 	    
 	    MenuItem insertImage = new MenuItem("Insert Image 🖻");
-	    MenuItem configureImage = new MenuItem("Configure Image 🎨");
 	    MenuItem editImage = new MenuItem("Edit Image 🎨");
 
         ColorPicker colorPicker = new ColorPicker(Color.BLACK);
@@ -245,23 +224,22 @@ public class BasicPage implements Page {
         suggestions.setOnAction((event)->{
         	ContextMenu contextMenu = new ContextMenu();
         	        	
-        	WebView webView = (WebView)htmlEditor.lookup("WebView"); 
-            if((boolean)webView.getEngine().executeScript("window.getSelection().rangeCount > 0")) {
-	        	String selection = (String)webView.getEngine().executeScript("document.getSelection().toString()");
+            if((boolean)webEngine.executeScript("window.getSelection().rangeCount > 0")) {
+	        	String selection = (String)webEngine.executeScript("document.getSelection().toString()");
 	        	if(!selection.equals("")) {
 		        	if(Main.languageTrie.hasWord(selection)) {
 		        		contextMenu.getItems().add(new MenuItem(selection));
 		        	}
 		        	else {
-			        	ArrayList<String> words = Main.languageTrie.getSuggestions(selection.toLowerCase());
 			        	HashSet<String> hs = new HashSet<>();
 			        	hs.addAll(Main.languageTrie.getSuggestions(selection));
+			        	hs.addAll(Main.languageTrie.getSuggestions(selection.toLowerCase()));
 			        	
 			        	for(String word: hs) {
 			        		MenuItem item = new MenuItem(word);
 			        		contextMenu.getItems().add(item);
 			        		item.setOnAction((actionEvent)->{
-			        			webView.getEngine().executeScript(String.format(JSReplaceSel,word));
+			        			webEngine.executeScript(String.format(JSReplaceSel,word));
 			        		});
 			        	}
 			        	if(contextMenu.getItems().isEmpty()){
@@ -286,7 +264,7 @@ public class BasicPage implements Page {
 			}});
 	    
 	    insertImage.setOnAction((event) -> {
-				insertImage(htmlEditor);
+				insertImage();
 			});   
 	    
 	    editImage.setOnAction((event) -> {
@@ -295,18 +273,9 @@ public class BasicPage implements Page {
             	String imageID = StringUtils.substringBetween(selection, "IMG",".png");
             	if(imageID!=null && imageID!="") {
                 	webView.getEngine().executeScript("document.getSelection().removeAllRanges()");
-            		styleImage(htmlEditor,imageID);
+            		styleImage(imageID);
             	}
-			});  
-	    configureImage.setOnAction((event) -> {
-        	WebView webView = (WebView)htmlEditor.lookup("WebView"); 
-        	String selection = (String)webView.getEngine().executeScript(JSGetSel);
-        	String imageID = StringUtils.substringBetween(selection, "IMG",".png");
-        	if(imageID!=null && imageID!="") {
-            	webView.getEngine().executeScript("document.getSelection().removeAllRanges()");
-        		configureImage(htmlEditor,imageID);
-        	}
-		});  
+			}); 
 	    
 	    english.setOnAction(new EventHandler<ActionEvent>() {
 			@Override public void handle(ActionEvent arg0) {
@@ -330,11 +299,9 @@ public class BasicPage implements Page {
 			}});
 	    
 	    link.setOnAction(new EventHandler<ActionEvent>() {
-	          @Override public void handle(ActionEvent event) {
-	            WebView webView = (WebView)htmlEditor.lookup("WebView"); 
-	            
+	          @Override public void handle(ActionEvent event) {	            
 	      		TreeView<String> miniTree = new TreeView<>();
-	    		depthFirstAssembily(miniTree,Main.currentProject);
+	    		assembleTreeView(miniTree,Main.currentProject);
 	    		miniTree.setShowRoot(false);
 	    		Stage pageSelStage = new Stage();
 	    		pageSelStage.setScene(new Scene(new StackPane(miniTree), 300, 400));
@@ -353,9 +320,8 @@ public class BasicPage implements Page {
 	    						if(pageNode.data!=BasicPage.this) {
 		    						if (!Main.currentProject.pageMap.containsValue(pageNode))
 		    							Main.currentProject.pageMap.put(UUID.randomUUID().toString(),pageNode);
-		    			   			String selection =  (String)webView.getEngine().executeScript("window.getSelection().toString();");
-		    			   			System.out.println(selection);
-		    						webView.getEngine().executeScript(String.format(JSReplaceSelWithHTML,String.format("<button onclick='pushPage(this.name)' name='%s' type='button' id='pageLink'>%s</button>",Main.currentProject.pageMap.inverse().get(pageNode),selection.replace("\n","<br>"))));
+		    			   			String selection =  (String)webEngine.executeScript("window.getSelection().toString();");
+		    			   			webEngine.executeScript(String.format(JSReplaceSelWithHTML,String.format("<button onclick='pushPage(this.name)' name='%s' type='button' id='pageLink'>%s</button>",Main.currentProject.pageMap.inverse().get(pageNode),selection.replace("\n","<br>"))));
 		    						pageSelStage.close();	
 	    						}
 	    					}		
@@ -363,17 +329,17 @@ public class BasicPage implements Page {
 	          }});
 	    delink.setOnAction(new EventHandler<ActionEvent>() {
 			@Override public void handle(ActionEvent event) {
-				delinkSelection(htmlEditor);
+				delinkSelection();
 			}});
 	    
 	    underline.setOnAction(new EventHandler<ActionEvent>() {
 			@Override public void handle(ActionEvent event) {
-				clearSpellingLines(htmlEditor);
+				clearSpellingLines();
 				
-		        WebView webView = (WebView)htmlEditor.lookup("WebView"); 
+		        WebEngine webEngine = ((WebView)htmlEditor.lookup("WebView")).getEngine(); 
 		        
 		        String htmlText = htmlEditor.getHtmlText();				
-				String plainText = (String)webView.getEngine().executeScript("document.body.innerText;");
+				String plainText = (String)webEngine.executeScript("document.body.innerText;");
 				LinkedHashSet<String> linkedHashSet=new LinkedHashSet<String>();
 				
 				List<String> allWords = new LinkedList<>(Arrays.asList(CharMatcher.whitespace().trimFrom(plainText).replace("-"," ").replaceAll("[^a-zA-Z ]", " ").split("[\\s\\xA0]+")));
@@ -382,7 +348,7 @@ public class BasicPage implements Page {
 				for(String string: linkedHashSet) {
 					if(!Main.languageTrie.hasWord(string)) {
 						int start = 0;
-						while((start = indexOfExTags(htmlText,string,start))!=-1) {
+						while((start = indexOfInnerText(string,start))!=-1) {
 							int end = start + string.length();	
 							String newStr = "<span class='spelling'>" + string + "</span>";
 							htmlText = htmlText.substring(0, start) + newStr + htmlText.substring(end);
@@ -394,7 +360,7 @@ public class BasicPage implements Page {
 			}});
 	    clearLines.setOnAction(new EventHandler<ActionEvent>() {
 			@Override public void handle(ActionEvent event) {
-				clearSpellingLines(htmlEditor);
+				clearSpellingLines();
 			}});
 
 	    Menu linkMenu = new Menu("Link...");
@@ -413,7 +379,7 @@ public class BasicPage implements Page {
 	    bar.getItems().addAll(menuBar,colorPicker);
 	}
 
-	public void insertImage(HTMLEditor htmlEditor) {
+	public void insertImage() {
 		FileChooser directoryChooser = new FileChooser();
 		if(Main.topMenu.currentImageFileDir!=null && Main.topMenu.currentImageFileDir.exists()) directoryChooser.setInitialDirectory(Main.topMenu.currentImageFileDir);
         directoryChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("image files", "*.jpg","*.jpeg", "*.png"));
@@ -423,26 +389,26 @@ public class BasicPage implements Page {
             System.out.println("No file selected");
         }
         else {
-			    Image image = new Image(directory.toURI().toString());
-		        WebView webView = (WebView)htmlEditor.lookup("WebView"); 		    	    		
-				String imagePath = Main.currentProject.addImage(image);
-				String imageID = StringUtils.substringBetween(imagePath, "IMG",".png");
-				webView.getEngine().executeScript(""
-						+ "var image = document.createElement('img');"
-						+ "image.src=\"file://" + imagePath +"\";"
-						+ "image.id = '"+imageID+"';"
-						+ "if (window.getSelection().rangeCount > 0){"
-						+ "	range = window.getSelection().getRangeAt(0);"
-						+ "	range.insertNode(image);}"
-						+ "else document.body.appendChild(image);"
-						);
-	    		styleImage(htmlEditor,imageID);
-				Main.topMenu.currentImageFileDir = directory.getParentFile();
+        	Image image = new Image(directory.toURI().toString());
+		    WebEngine webEngine = ((WebView)htmlEditor.lookup("WebView")).getEngine(); 		    	    		
+		    String imagePath = Main.currentProject.addImage(image);
+		    String imageID = StringUtils.substringBetween(imagePath, "IMG",".png");
+			webEngine.executeScript(""
+					+ "var image = document.createElement('img');"
+					+ "image.src=\"file://" + imagePath +"\";"
+					+ "image.id = '"+imageID+"';"
+					+ "if (window.getSelection().rangeCount > 0){"
+					+ "	range = window.getSelection().getRangeAt(0);"
+					+ "	range.insertNode(image);}"
+					+ "else document.body.appendChild(image);"
+					);
+	    	styleImage(imageID);
+			Main.topMenu.currentImageFileDir = directory.getParentFile();
         }
 	}
 	
-	public void styleImage(HTMLEditor htmlEditor, String imageId) {
-        WebView webView = (WebView)htmlEditor.lookup("WebView"); 		    	    		
+	public void styleImage(String imageId) {
+        WebEngine webEngine = ((WebView)htmlEditor.lookup("WebView")).getEngine(); 		    	    		
 		imageFilters = "";
 		
 		Slider sizeSlider = new Slider(0,200,100);
@@ -477,32 +443,32 @@ public class BasicPage implements Page {
 
 		sizeSlider.valueProperty().addListener((observable,oldVal,newVal) ->{
 			sizeLabel.setText("Size %"+newVal.intValue());
-			webView.getEngine().executeScript("var image = document.getElementById('"+imageId+"');"
+			webEngine.executeScript("var image = document.getElementById('"+imageId+"');"
 					+ "image.style.width = '" + (((int)sizeSlider.getValue()==0)?100:(int)sizeSlider.getValue()) + "%';");
 			});
 	    
 	    alignBox.valueProperty().addListener((observable,oldVal,newVal) ->{
-				webView.getEngine().executeScript("var image = document.getElementById('"+imageId+"');"
+	    	webEngine.executeScript("var image = document.getElementById('"+imageId+"');"
 						+ "image.align = '" + newVal +"';");
 				});
 	    
 	    borderTypeBox.valueProperty().addListener((observable,oldVal,newVal) ->{
-				webView.getEngine().executeScript("var image = document.getElementById('"+imageId+"');"
+	    	webEngine.executeScript("var image = document.getElementById('"+imageId+"');"
 						+ "image.style.borderStyle = '" + newVal +"';");
 				});
 	    
 	    borderWidthBox.valueProperty().addListener((observable,oldVal,newVal) ->{
-				webView.getEngine().executeScript("var image = document.getElementById('"+imageId+"');"
+	    	webEngine.executeScript("var image = document.getElementById('"+imageId+"');"
 						+ "image.style.borderWidth = '" + newVal +"';");
 				});
 	    
 	    borderColourField.textProperty().addListener((observable,oldVal,newVal) ->{
-				webView.getEngine().executeScript("var image = document.getElementById('"+imageId+"');"
+	    	webEngine.executeScript("var image = document.getElementById('"+imageId+"');"
 					+ "image.style.borderColor = '" + newVal +"';");
 	    	});
 	    
 	    borderSlider.valueProperty().addListener((observable,oldVal,newVal) ->{
-			webView.getEngine().executeScript("var image = document.getElementById('"+imageId+"');"
+	    	webEngine.executeScript("var image = document.getElementById('"+imageId+"');"
 					+ "image.style.borderRadius = '"+newVal+"%';");
 			});
 		
@@ -513,15 +479,15 @@ public class BasicPage implements Page {
 	    gridPane.add(borderWidthBox, 3, 2);
 	    gridPane.add(borderColourField, 3, 3);
 	    
-	    addFilterSlider(htmlEditor,gridPane,imageId,"Blur (px):","blur","px",25,0,2);
-	    addFilterSlider(htmlEditor,gridPane,imageId,"Brightness (%):","brightness","%",500,100,3);
-	    addFilterSlider(htmlEditor,gridPane,imageId,"Contrast (%):","contrast","%",500,100,4);
-	    addFilterSlider(htmlEditor,gridPane,imageId,"Saturation (%):","saturate","%",500,100,5);
-	    addFilterSlider(htmlEditor,gridPane,imageId,"Invert (%):","invert","%",100,0,6);
-	    addFilterSlider(htmlEditor,gridPane,imageId,"Greyscale (%):","grayscale","%",100,0,7);
-	    addFilterSlider(htmlEditor,gridPane,imageId,"Sepia (%):","sepia","%",100,0,8);
-	    addFilterSlider(htmlEditor,gridPane,imageId,"Hue (degrees):","hue-rotate","deg",360,0,9);
-	    addFilterSlider(htmlEditor,gridPane,imageId,"Opacity (%):","opacity","%",100,100,10);
+	    addFilterSlider(gridPane,imageId,"Blur (px):","blur","px",25,0,2);
+	    addFilterSlider(gridPane,imageId,"Brightness (%):","brightness","%",500,100,3);
+	    addFilterSlider(gridPane,imageId,"Contrast (%):","contrast","%",500,100,4);
+	    addFilterSlider(gridPane,imageId,"Saturation (%):","saturate","%",500,100,5);
+	    addFilterSlider(gridPane,imageId,"Invert (%):","invert","%",100,0,6);
+	    addFilterSlider(gridPane,imageId,"Greyscale (%):","grayscale","%",100,0,7);
+	    addFilterSlider(gridPane,imageId,"Sepia (%):","sepia","%",100,0,8);
+	    addFilterSlider(gridPane,imageId,"Hue (degrees):","hue-rotate","deg",360,0,9);
+	    addFilterSlider(gridPane,imageId,"Opacity (%):","opacity","%",100,100,10);
 	    
 	    Scene scene = new Scene(gridPane);
 		imageStage.setScene(scene);
@@ -532,7 +498,7 @@ public class BasicPage implements Page {
 		imageStage.show();
 	}
 	
-	public void addFilterSlider(HTMLEditor htmlEditor,GridPane gridPane, String imageID, String labelText, String filterAttr, String unit, int length, int current, int row) {
+	public void addFilterSlider(GridPane gridPane, String imageID, String labelText, String filterAttr, String unit, int length, int current, int row) {
 	    Slider slider = new Slider(0,length,current);
 	    slider.setShowTickLabels(true);	slider.setShowTickMarks(true);
 	    Label label = new Label(labelText);
@@ -543,7 +509,7 @@ public class BasicPage implements Page {
 	    	slider.setDisable(!newV); 
 	    	if(newV == false){
 	    		imageFilters = imageFilters.replaceAll(filterAttr+".*?\\)", ""); 
-	    		updateImageFilters(htmlEditor,imageID);
+	    		updateImageFilters(imageID);
 	    		} 
 	    	});
 	    
@@ -552,85 +518,22 @@ public class BasicPage implements Page {
 					imageFilters += " " + filterAttr +"(0"+unit+")";
 				}
 	    		imageFilters = imageFilters.replaceAll("("+filterAttr+"\\()(.*?)("+unit+"\\))", filterAttr+"\\("+newVal.intValue()+unit+"\\)");
-				updateImageFilters(htmlEditor,imageID);
+				updateImageFilters(imageID);
 	    	});
 	    gridPane.add(label, 0, row);
 	    gridPane.add(tickBox, 1, row);
 	    gridPane.add(slider, 2, row);
-	}
+	}	
 	
-	public void configureImage(HTMLEditor htmlEditor, String imageId) {
-        WebView webView = (WebView)htmlEditor.lookup("WebView"); 
-        
-		int imageWidth = (int)webView.getEngine().executeScript("document.getElementById('"+imageId+"').width;");
-		int imageHeight = (int)webView.getEngine().executeScript("document.getElementById('"+imageId+"').height;");
-        
-        cropDims = new int[]{0,imageWidth,imageHeight,0};
-		
-		Slider topSlider = new Slider(0,imageHeight,0);
-	    Label topLabel = new Label("Top (px)");
-	    topSlider.setShowTickLabels(true);	topSlider.setShowTickMarks(true);
-	    
-		Slider rightSlider = new Slider(0,imageWidth,imageWidth);
-	    Label rightLabel = new Label("Right (px)");
-	    rightSlider.setShowTickLabels(true); rightSlider.setShowTickMarks(true);
-	    
-		Slider bottomSlider = new Slider(0,imageHeight,imageHeight);
-	    Label bottomLabel = new Label("Bottom (px)");
-	    bottomSlider.setShowTickLabels(true);	bottomSlider.setShowTickMarks(true);
-	    
-		Slider leftSlider = new Slider(0,imageWidth,0);
-	    Label leftLabel = new Label("Left (px)");
-	    leftSlider.setShowTickLabels(true);	leftSlider.setShowTickMarks(true);
-	    
-	    topSlider.valueProperty().addListener((obs,oldV,newV)->{
-	    	cropDims[0] = newV.intValue();
-	    	updateCropDimensions(htmlEditor,imageId);
-	    });
-	    rightSlider.valueProperty().addListener((obs,oldV,newV)->{
-	    	cropDims[1] = newV.intValue();
-	    	updateCropDimensions(htmlEditor,imageId);
-	    });
-	    bottomSlider.valueProperty().addListener((obs,oldV,newV)->{
-	    	cropDims[2] = newV.intValue();
-	    	updateCropDimensions(htmlEditor,imageId);
-	    });
-	    leftSlider.valueProperty().addListener((obs,oldV,newV)->{
-	    	cropDims[3] = newV.intValue();
-	    	updateCropDimensions(htmlEditor,imageId);
-	    });
-	    
-		Stage imageStage = new Stage();
-	    GridPane gridPane = new GridPane();
-	    
-	    gridPane.add(leftLabel, 0,0);	gridPane.add(leftSlider, 1,0);
-	    gridPane.add(rightLabel, 0,1);	gridPane.add(rightSlider, 1,1);
-	    gridPane.add(topLabel, 0,2);	gridPane.add(topSlider, 1,2);
-	    gridPane.add(bottomLabel, 0,3);	gridPane.add(bottomSlider, 1,3);
-
-		imageStage.setScene(new Scene(gridPane));
-		imageStage.setTitle("Configure Image");
-		imageStage.initModality(Modality.APPLICATION_MODAL);
-		imageStage.requestFocus();
-		imageStage.getScene().getStylesheets().add(Main.styleFile);
-		imageStage.show();  
-	}
-	
-	public void updateCropDimensions(HTMLEditor htmlEditor, String imageID) {
-		PixelReader reader = Main.currentProject.imageMap.get(imageID).getPixelReader();
-		WritableImage newImage = new WritableImage(reader, cropDims[0]+1, cropDims[1]+1);
-		Main.currentProject.imageMap.put(imageID, newImage);
-		Main.currentProject.readyImage(imageID);
-	}
-	
-	public void updateImageFilters(HTMLEditor htmlEditor, String imageID) {
-        WebView webView = (WebView)htmlEditor.lookup("WebView"); 
-		webView.getEngine().executeScript("var image = document.getElementById('"+imageID+"');"
+	public void updateImageFilters(String imageID) {
+        WebEngine webEngine= ((WebView)htmlEditor.lookup("WebView")).getEngine(); 
+        webEngine.executeScript("var image = document.getElementById('"+imageID+"');"
 				+ "image.style.filter = 'none';"
 				+ "image.style.filter = \""+imageFilters+"\";");
 	}
 	
-	public int indexOfExTags(String htmlText,String text,int startIndex){
+	public int indexOfInnerText(String text,int startIndex){
+		String htmlText = htmlEditor.getHtmlText();
 		StringBuilder currentWord = new StringBuilder();
 		StringBuilder tagWord = new StringBuilder();
 		boolean withinTag = false;	
@@ -671,17 +574,16 @@ public class BasicPage implements Page {
 		return -1;
 	}
 	
-	public void clearSpellingLines(HTMLEditor htmlEditor) {
-        String htmlText = htmlEditor.getHtmlText();
-        htmlText = htmlText.replaceAll("(<span class=\"spelling\">)(.*?)(<\\/span>)","$2");     
+	public void clearSpellingLines() {
+        String htmlText = htmlEditor.getHtmlText().replaceAll("(<span class=\"spelling\">)(.*?)(<\\/span>)","$2");
         htmlEditor.setHtmlText(htmlText);
 	}
 	
-	public void delinkSelection(HTMLEditor htmlEditor) {
-        WebView webView = (WebView)htmlEditor.lookup("WebView");
-        if((boolean)webView.getEngine().executeScript("window.getSelection().rangeCount > 0")) {
-			String selection =  (String)webView.getEngine().executeScript("window.getSelection().toString();");
-			webView.getEngine().executeScript(String.format(JSReplaceSelWithHTML,String.format("<!--startSel-->%s<!--endSel-->",selection)));
+	public void delinkSelection() {
+        WebEngine webEngine = ((WebView)htmlEditor.lookup("WebView")).getEngine();
+        if((boolean)webEngine.executeScript("window.getSelection().rangeCount > 0")) {
+			String selection =  (String)webEngine.executeScript("window.getSelection().toString();");
+			webEngine.executeScript(String.format(JSReplaceSelWithHTML,String.format("<!--startSel-->%s<!--endSel-->",selection)));
 			String htmlText = htmlEditor.getHtmlText();
 			int startIndex, endIndex;
 			{ /*startIndex*/
@@ -709,30 +611,23 @@ public class BasicPage implements Page {
         }
 	}
 	
-	public void depthFirstAssembily(TreeView<String> tree, Project project) {
+	public void assembleTreeView(TreeView<String> tree, Project project) {
 		ContentsPage.MyTreeItem<String>  root = new ContentsPage.MyTreeItem<String>();
 		tree.setRoot(root);
-		depthFirstAssembily(project.pageTree.root, new ArrayList<Tree.Node<Page>>(), root, 0);
+		assembleTreeView(project.pageTree.getRoot(), root, 0);
 	}
 
-	private void depthFirstAssembily(Tree.Node<Page> pageNode, ArrayList<Tree.Node<Page>> visited, MyTreeItem<String> ParentGUINode, int childArrayIndex) {
+	private void assembleTreeView(Tree.Node<Page> pageNode, MyTreeItem<String> ParentGUINode, int childArrayIndex) {
 		MyTreeItem<String> GUINode = ParentGUINode.branch(pageNode.data.getIcon() + " " + pageNode.data.getTitle());
 		GUINode.internalAddress.addAll(ParentGUINode.internalAddress);
 		GUINode.internalAddress.add(childArrayIndex);
-		if (visited == null)
-			visited = new ArrayList<Tree.Node<Page>>();
-		visited.add(pageNode);
 		for (int i = 0; i < pageNode.getChildren().size(); i++) {
-			Tree.Node<Page> childPage = pageNode.getChildren().get(i);
-			if (childPage != null && !visited.contains(childPage)) {
-				depthFirstAssembily(childPage, visited, GUINode, i);
-			}
+			assembleTreeView(pageNode.getChildren().get(i), GUINode, i);
 		}
 	}
 	
 	@Override
 	public String getIcon() {
-		// TODO Auto-generated method stub
 		return "📝";
 	}
 
@@ -741,9 +636,23 @@ public class BasicPage implements Page {
 		return title;
 	}
 	
-	public BasicPage() {this.title = "Book";try {loadexternalCommands();} catch (IOException e) {e.printStackTrace();}}
-	public BasicPage(String title) {this.title = title;try {loadexternalCommands();} catch (IOException e) {e.printStackTrace();}}
-	public BasicPage(String title,String content) {this.title = title; this.content = content; try {loadexternalCommands();} catch (IOException e) {e.printStackTrace();}}
+	public BasicPage() {
+		this("Page");
+	}
+	
+	public BasicPage(String title,String htmlText) {
+		this(title);
+		htmlEditor.setHtmlText(htmlText);
+	}
+	
+	public BasicPage(String title) {
+		this.title = title;
+		try {loadexternalCommands();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		initHTMLEditor();
+	}
 
 	@Override
 	public void setTitle(String title) {
@@ -751,30 +660,14 @@ public class BasicPage implements Page {
 	}
 	
 	public void loadexternalCommands() throws IOException {
-		JSAddColumn = readexternalFile("/external/scriptAddColumn.txt");
-		JSReplaceSel = readexternalFile("/external/scriptReplaceSelection.txt");
-		JSReplaceSelWithHTML = readexternalFile("/external/scriptReplaceSelectionWithHTML.txt");
-		JSGetSel = readexternalFile("/external/scriptGetSelectedHTML.txt");
+		JSAddColumn = readexternalFile("external/scriptAddColumn.txt");
+		JSReplaceSel = readexternalFile("external/scriptReplaceSelection.txt");
+		JSReplaceSelWithHTML = readexternalFile("external/scriptReplaceSelectionWithHTML.txt");
+		JSGetSel = readexternalFile("external/scriptGetSelectedHTML.txt");
 	}
 	
 	public String readexternalFile(String file) throws IOException{
- 		InputStream in = getClass().getResourceAsStream(file); 
- 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));		  
-		StringBuffer stringBuffer = new StringBuffer();
-		String line = "";	
-		while((line =bufferedReader.readLine())!=null)	 
-			stringBuffer.append(line).append("\n");
-		bufferedReader.close();
-		return stringBuffer.toString();	
-	}
-
-	@Override
-	public Object getContent() {
-		return content;
-	}
-
-	@Override
-	public void setContent(Object object) {
-		content = (String)object;
+		URL url = Resources.getResource(file);
+		return Resources.toString(url, Charsets.UTF_8);
 	}
 }

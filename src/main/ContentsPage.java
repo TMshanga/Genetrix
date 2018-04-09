@@ -1,33 +1,20 @@
 package main;
 
-import java.awt.MouseInfo;
-import java.awt.Point;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
-
-import org.apache.commons.io.Charsets;
 
 import com.google.common.io.Resources;
 
 import dataStructures.Tree;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.event.EventType;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -40,24 +27,16 @@ import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseDragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -68,9 +47,7 @@ public class ContentsPage {
 	public Label title = new Label("ℂ𝕠𝕟𝕥𝕖𝕟𝕥𝕤 ℙ𝕒𝕘𝕖");
 
 	TreeView<String> tree = new TreeView<String>();
-
 	MyTreeItem<String> root = new MyTreeItem<String>();
-	MyTreeItem<String> newPosItem = new MyTreeItem<String>("New Position");
 	
 	Tree.Node<Page> copiedPage = null;
 
@@ -85,7 +62,7 @@ public class ContentsPage {
 		newPage.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				Main.currentProject.pageTree.root.add(new BasicPage("New Page"));
+				Main.currentProject.pageTree.getRoot().add(new BasicPage("New Page"));
 				reassembleTreeView(Main.currentProject);
 			}
 		});
@@ -124,7 +101,7 @@ public class ContentsPage {
 		newFolder.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				Main.currentProject.pageTree.root.add(new Folder("New Folder"));
+				Main.currentProject.pageTree.getRoot().add(new Folder("New Folder"));
 				reassembleTreeView(Main.currentProject);
 			}
 		});
@@ -172,9 +149,9 @@ public class ContentsPage {
 				treeCell.setOnDragDropped(new EventHandler<DragEvent>() {
 					@Override
 					public void handle(DragEvent arg0) {
-						MyTreeItem item = (MyTreeItem) treeCell.getTreeItem();
+						MyTreeItem<String> item = (MyTreeItem<String>) treeCell.getTreeItem();
 
-						Tree.Node<Page> priorNode = Main.currentProject.pageTree.getNode(((MyTreeItem) tree.getSelectionModel().getSelectedItem()).internalAddress);
+						Tree.Node<Page> priorNode = Main.currentProject.pageTree.getNode(((MyTreeItem<String>) tree.getSelectionModel().getSelectedItem()).internalAddress);
 						Tree.Node<Page> targetNode = Main.currentProject.pageTree.getNode(item.internalAddress);
 
 						if (priorNode != targetNode && root != item && !targetNode.hasAncestor(priorNode)) {
@@ -203,7 +180,7 @@ public class ContentsPage {
 						if (item.internalAddress.size() > 1) { // if the clicked item is not the root node
 							Tree.Node<Page> pageNode = Main.currentProject.pageTree.getNode(item.internalAddress);
 							if(Main.pageViewer.subStageMap.containsKey(pageNode))
-								Main.pageViewer.projectPage(pageNode);
+								Main.pageViewer.detachPage(pageNode);
 							else
 								Main.pageViewer.addTab(pageNode);
 						}
@@ -242,22 +219,16 @@ public class ContentsPage {
 	public void reassembleTreeView(Project project) {
 		root = new MyTreeItem<String>();
 		tree.setRoot(root);
-		depthFirstAssembily(project.pageTree.root, new ArrayList<Tree.Node<Page>>(), root, 0);
+		reassembleTreeView(project.pageTree.getRoot(), root, 0);
 	}
 
-	private void depthFirstAssembily(Tree.Node<Page> pageNode, ArrayList<Tree.Node<Page>> visited,
-			MyTreeItem<String> ParentGUINode, int childArrayIndex) {
+	private void reassembleTreeView(Tree.Node<Page> pageNode, MyTreeItem<String> ParentGUINode, int childArrayIndex) {
 		MyTreeItem<String> GUINode = ParentGUINode.branch(pageNode.data.getIcon() + " " + pageNode.data.getTitle());
 		GUINode.internalAddress.addAll(ParentGUINode.internalAddress);
 		GUINode.internalAddress.add(childArrayIndex);
-		if (visited == null)
-			visited = new ArrayList<Tree.Node<Page>>();
-		visited.add(pageNode);
 		for (int i = 0; i < pageNode.getChildren().size(); i++) {
 			Tree.Node<Page> childPage = pageNode.getChildren().get(i);
-			if (childPage != null && !visited.contains(childPage)) {
-				depthFirstAssembily(childPage, visited, GUINode, i);
-			}
+			reassembleTreeView(childPage, GUINode, i);
 		}
 	}
 
@@ -274,9 +245,9 @@ public class ContentsPage {
 		rename.setOnAction(new renameAction());
 		copy.setOnAction((event) ->{
 			if(tree.getSelectionModel().getSelectedItem() !=null) {
-				MyTreeItem item = (MyTreeItem) tree.getSelectionModel().getSelectedItem();
+				MyTreeItem<String> item = (MyTreeItem<String>) tree.getSelectionModel().getSelectedItem();
 				Tree.Node<Page> node = (Tree.Node<Page>) Main.currentProject.pageTree.getNode(item.internalAddress);
-				if(node != Main.currentProject.pageTree.root) {
+				if(node != Main.currentProject.pageTree.getRoot()) {
 					copiedPage = new Tree.Node<Page>();
 					deepCopy(node,copiedPage);
 				}
@@ -285,7 +256,7 @@ public class ContentsPage {
 		paste.setOnAction((event) ->{
 			if(tree.getSelectionModel().getSelectedItem() !=null) {
 				if(copiedPage != null) {
-					MyTreeItem item = (MyTreeItem) tree.getSelectionModel().getSelectedItem();
+					MyTreeItem<String> item = (MyTreeItem<String>) tree.getSelectionModel().getSelectedItem();
 					Tree.Node<Page> node = (Tree.Node<Page>) Main.currentProject.pageTree.getNode(item.internalAddress);
 					node.add(copiedPage);
 					Tree.Node<Page> oldCopy = copiedPage;
@@ -295,9 +266,10 @@ public class ContentsPage {
 			}
 		});
 		detach.setOnAction((event)->{
-			MyTreeItem item = (MyTreeItem) tree.getSelectionModel().getSelectedItem();
+			MyTreeItem<String> item = (MyTreeItem<String>) tree.getSelectionModel().getSelectedItem();
 			Tree.Node<Page> node = (Tree.Node<Page>) Main.currentProject.pageTree.getNode(item.internalAddress);
-	 		Main.pageViewer.projectPage(node);
+	 		if(node!=Main.currentProject.pageTree.getRoot())
+	 			Main.pageViewer.detachPage(node);
 		});
 		
 		return contextMenu;
@@ -307,14 +279,14 @@ public class ContentsPage {
 		@Override
 		public void handle(ActionEvent event) {
 			if(tree.getSelectionModel().getSelectedItem() !=null) {
-				MyTreeItem item = (MyTreeItem) tree.getSelectionModel().getSelectedItem();
-				System.out.println(item.toString());
+				MyTreeItem<String> item = (MyTreeItem<String>) tree.getSelectionModel().getSelectedItem();
+				
 				Tree.Node<Page> node = (Tree.Node<Page>) Main.currentProject.pageTree.getNode(item.internalAddress);
-				if (node != Main.currentProject.pageTree.root) {
+				if (node != Main.currentProject.pageTree.getRoot()) {
 					deepCopy(node,copiedPage = new Tree.Node<Page>());
 					deepDelete(node);
 					if(Main.pageViewer.tabPane.getTabs().size()==0) {
-						Main.pageViewer.viewerPane.setCenter(Main.currentProject.pageTree.root.data.BuildPane());
+						Main.pageViewer.viewerPane.setCenter(Main.currentProject.pageTree.getRoot().data.BuildPane());
 					}
 					reassembleTreeView(Main.currentProject);
 				}
@@ -326,7 +298,7 @@ public class ContentsPage {
 		@Override
 		public void handle(ActionEvent event) {
 			if(tree.getSelectionModel().getSelectedItem() !=null) {
-				MyTreeItem item = (MyTreeItem) tree.getSelectionModel().getSelectedItem();
+				MyTreeItem<String> item = (MyTreeItem<String>) tree.getSelectionModel().getSelectedItem();
 				System.out.println(item.toString());
 				Tree.Node<Page> node = (Tree.Node<Page>) Main.currentProject.pageTree.getNode(item.internalAddress);
 	
@@ -377,7 +349,7 @@ public class ContentsPage {
  	public void deepCopy(Tree.Node<Page> node, Tree.Node<Page> clone)
  	{		
 		if(node.data instanceof BasicPage) 
- 			clone.data = new BasicPage(node.data.getTitle(),((BasicPage)node.data).content);
+ 			clone.data = new BasicPage(node.data.getTitle(),((BasicPage)node.data).htmlEditor.getHtmlText());
  		else if (clone.data instanceof Book) 
  			clone.data = new Book(node.data.getTitle());
  		else if (clone.data instanceof Folder) 
@@ -396,7 +368,7 @@ public class ContentsPage {
 		} catch (IOException e) {e.printStackTrace();}
 		
 		BasicPage page = new BasicPage(title,text);
-		Main.currentProject.pageTree.root.add(page);
+		Main.currentProject.pageTree.getRoot().add(page);
 		reassembleTreeView(Main.currentProject);
 	}
 }

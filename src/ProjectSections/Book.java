@@ -1,7 +1,6 @@
 package projectSections;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
@@ -9,13 +8,9 @@ import com.google.common.primitives.Ints;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.web.HTMLEditor;
-import javafx.scene.web.WebView;
 import main.Main;
 
 public class Book implements Page {
@@ -77,16 +72,5 @@ public class Book implements Page {
 	@Override
 	public void setTitle(String title) {
 		this.title = title;		
-	}
-
-	@Override
-	public Object getContent() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setContent(Object object) {
-		// TODO Auto-generated method stub
 	}
 }

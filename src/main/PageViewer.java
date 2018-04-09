@@ -1,7 +1,6 @@
 package main;
 
 import java.awt.Toolkit;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -18,7 +17,6 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.web.HTMLEditor;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import projectSections.Folder;
@@ -32,13 +30,12 @@ public class PageViewer {
 	PageViewer(){
 		viewerPane.setMinSize(100, 100);
         viewerPane.setTop(tabPane);
-		tabPane.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Tab>(){
-			@Override public void changed(ObservableValue<? extends Tab> observable, Tab oldVal, Tab newVal) {
+		tabPane.getSelectionModel().selectedItemProperty().addListener( (obsv,oldVal,newVal)->{
 				if(newVal != null) { //in case of a closure
 					if (Main.currentProject.pageMap.containsKey(((CustomTab)newVal).pageMapKey)) {
-						if (Main.currentProject.pageMap.get(((CustomTab)newVal).pageMapKey).hasAncestor(Main.currentProject.pageTree.root)) {
+						if (Main.currentProject.pageMap.get(((CustomTab)newVal).pageMapKey).hasAncestor(Main.currentProject.pageTree.getRoot())) {
 							newVal.setText(Main.currentProject.pageMap.get(((CustomTab)newVal).pageMapKey).data.getTitle());
-							displayPage(Main.currentProject.pageMap.get(((CustomTab)newVal).pageMapKey));
+							dockPage(Main.currentProject.pageMap.get(((CustomTab)newVal).pageMapKey));
 						}
 						else {
 							tabPane.getTabs().remove(newVal);
@@ -47,8 +44,8 @@ public class PageViewer {
 					}
 					else tabPane.getTabs().remove(newVal);
 				}
-				else viewerPane.setCenter(null);
-			}});
+				else viewerPane.setCenter(Main.currentProject.pageTree.getRoot().data.BuildPane());
+			});
 		tabPane.setOnMouseClicked((event)->{
 			if(tabPane.getSelectionModel().getSelectedItem() != null) {
 				String key = ((CustomTab)tabPane.getSelectionModel().getSelectedItem()).pageMapKey;
@@ -57,19 +54,19 @@ public class PageViewer {
 			}
 		});
 		
-		viewerPane.setCenter(Main.currentProject.pageTree.root.data.BuildPane());
+		viewerPane.setCenter(Main.currentProject.pageTree.getRoot().data.BuildPane());
 	}
 	
 	public void reset() {
 		tabPane.getTabs().clear();
-		viewerPane.setCenter(Main.currentProject.pageTree.root.data.BuildPane());
+		viewerPane.setCenter(Main.currentProject.pageTree.getRoot().data.BuildPane());
 		for (Stage stage: subStageMap.values()) {
 			stage.close();
 		}
 		subStageMap = new HashMap<>();
 	}
 	
-	public void displayPage(Node<Page> pageNode) {
+	public void dockPage(Node<Page> pageNode) {
 		subStageMap.remove(pageNode);
 		if(pageNode.data instanceof Folder)
 			viewerPane.setCenter(((Folder)pageNode.data).BuildPane(pageNode));
@@ -77,7 +74,7 @@ public class PageViewer {
 			viewerPane.setCenter(pageNode.data.BuildPane());
 	}
 	
-	public void projectPage(Node<Page> pageNode){		
+	public void detachPage(Node<Page> pageNode){		
 		if(subStageMap.containsKey(pageNode)) {
 			subStageMap.get(pageNode).requestFocus();
 		}
@@ -100,6 +97,7 @@ public class PageViewer {
 			subStage.show();
 			subStage.setUserData(pageNode);	
 			subStage.iconifiedProperty().addListener(new ChangeListener<Boolean>() {
+				@SuppressWarnings("unchecked")
 				@Override public void changed(ObservableValue<? extends Boolean> observable, Boolean oldVal, Boolean minimised) {
 					if (minimised) {
 						PageViewer.this.addTab((Node<Page>)subStage.getUserData());
@@ -108,13 +106,14 @@ public class PageViewer {
 					}
 				}});
 			subStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+				@SuppressWarnings("unchecked")
 				@Override public void handle(WindowEvent event) {
 					subStageMap.remove((Node<Page>)subStage.getUserData());
 				}});
 			
 			subStageMap.put(pageNode, subStage);
 			if(tabPane.getTabs().isEmpty())
-				viewerPane.setCenter(Main.currentProject.pageTree.root.data.BuildPane());
+				viewerPane.setCenter(Main.currentProject.pageTree.getRoot().data.BuildPane());
 		}
 	}
 	
@@ -136,7 +135,7 @@ public class PageViewer {
 			detach.setOnAction(new EventHandler<ActionEvent>() {
 				@Override public void handle(ActionEvent event) {
 					if(Main.currentProject.pageMap.containsKey(pageMapKey))
-						projectPage(Main.currentProject.pageMap.get(pageMapKey));
+						detachPage(Main.currentProject.pageMap.get(pageMapKey));
 					tabPane.getTabs().remove(CustomTab.this);
 				}});
 			moveRight.setOnAction(new EventHandler<ActionEvent>() {
@@ -155,7 +154,7 @@ public class PageViewer {
 				}});
 			this.setOnClosed((event) -> {		
 				if(tabPane.getTabs().isEmpty())
-					viewerPane.setCenter(Main.currentProject.pageTree.root.data.BuildPane());
+					viewerPane.setCenter(Main.currentProject.pageTree.getRoot().data.BuildPane());
 			});
 			
 			contextMenu.getItems().addAll(detach,moveRight,moveLeft);	
@@ -188,7 +187,7 @@ public class PageViewer {
 				stage.setScene(new Scene(((Node<Page>)stage.getUserData()).data.BuildPane()));
 		}
 		if(tabPane.getTabs().isEmpty()) {
-			viewerPane.setCenter(Main.currentProject.pageTree.root.data.BuildPane());
+			viewerPane.setCenter(Main.currentProject.pageTree.getRoot().data.BuildPane());
 		}
 	}
 }
