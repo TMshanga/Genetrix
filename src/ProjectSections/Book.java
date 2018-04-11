@@ -55,15 +55,15 @@ public class Book implements Page {
 		borderPane.setCenter(htmlEditor); 
 		return borderPane;
 	}
-	@Override
-	public String getIcon() {
-		// TODO Auto-generated method stub
-		return "🕮";
-	}
 
 	@Override
 	public String getTitle() {
 		return title;
+	}
+	
+	@Override
+	public String toString() {
+		return "🕮 " +title;
 	}
 	
 	public Book() {this.title = "Book";}

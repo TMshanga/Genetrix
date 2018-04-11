@@ -4,14 +4,14 @@ import java.io.UnsupportedEncodingException;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 
-import dataStructures.Tree;
-import dataStructures.Tree.Node;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TreeItem;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import main.ContentsPage;
 import main.Main;
 
 public class Folder implements Page{
@@ -42,17 +42,17 @@ public class Folder implements Page{
 		return new BorderPane();
 	}
 	
-	public Pane BuildPane(Node<Page> folderNode) {
-		ListView<FauxString> listView = new ListView<>();
+	public Pane BuildPane(TreeItem<Page> folderNode) {
+		ListView<pageString> listView = new ListView<>();
 		Button refresh = new Button("⟳");
 		VBox vbox = new VBox(listView,refresh);
 		
-		for (Node<Page> child: folderNode.getChildren()) {
-			listView.getItems().add(new FauxString(child.data.getTitle(),child));
+		for (TreeItem<Page> child: folderNode.getChildren()) {
+			listView.getItems().add(new pageString(child.getValue().getTitle(),child));
 		}			
 		listView.getSelectionModel().selectedItemProperty().addListener((obsv,oldV,newV)->{
 			if (newV!=null) {
-				if(newV.page.hasAncestor(Main.currentProject.pageTree.getRoot())) {
+				if(ContentsPage.hasAncestor(newV.page,Main.contentsPage.tree.getRoot())) {
 					if(listView.getScene() != Main.stage.getScene())
 						Main.pageViewer.detachPage(newV.page);
 					else
@@ -60,8 +60,8 @@ public class Folder implements Page{
 				}
 				else {
 					listView.getItems().clear();
-					for (Node<Page> child: folderNode.getChildren()) {
-						listView.getItems().add(new FauxString(child.data.getTitle(),child));
+					for (TreeItem<Page> child: folderNode.getChildren()) {
+						listView.getItems().add(new pageString(child.getValue().getTitle(),child));
 					}	
 				}
 			}
@@ -69,18 +69,18 @@ public class Folder implements Page{
 		
 		refresh.setOnAction((event)->{
 			listView.getItems().clear();
-			for (Node<Page> child: folderNode.getChildren()) {
-				listView.getItems().add(new FauxString(child.data.getTitle(),child));
+			for (TreeItem<Page> child: folderNode.getChildren()) {
+				listView.getItems().add(new pageString(child.getValue().getTitle(),child));
 			}	
 		});
 		vbox.setAlignment(Pos.TOP_CENTER);
 		return vbox;
 	}
 	
-	class FauxString{
-		public Tree.Node<Page> page;
+	class pageString{
+		public TreeItem<Page> page;
 		public String string;
-		FauxString(String string, Tree.Node<Page> page){
+		pageString(String string, TreeItem<Page> page){
 			this.string = string;
 			this.page = page;
 		}
@@ -91,14 +91,13 @@ public class Folder implements Page{
 	}
 
 	@Override
-	public String getIcon() {
-		// TODO Auto-generated method stub
-		return "📁";
-	}
-
-	@Override
 	public String getTitle() {
 		return title;
+	}
+	
+	@Override
+	public String toString() {
+		return "📁 " +title;
 	}
 	
 	public Folder() {this.title = "Folder";}

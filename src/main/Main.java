@@ -1,7 +1,7 @@
 package main;
 import javafx.application.Application;
-import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.control.TreeItem;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import projectSections.BasicPage;
@@ -33,9 +33,9 @@ public class Main extends Application
 	
 	public static Stage stage = new Stage();
 	public static Project currentProject = new Project();
+	public static ContentsPage contentsPage = new ContentsPage();
 	public static PageViewer pageViewer = new PageViewer();
 	public static TopMenu topMenu= new TopMenu();
-	public static ContentsPage contentsPage = new ContentsPage();
 	
 	static double mousePosX=0, mousePosY=0;
 	public static double mouseDeltaX=0, mouseDeltaY=0;
@@ -47,8 +47,8 @@ public class Main extends Application
 	{	
 		Main.languageTrie.buildLanguageTrie(Main.languageTrie.readWordList("EnglishLanguage.txt"));
 		mainStage = stage;
-		currentProject = new Project("Project Name");
-		currentProject.pageTree.getRoot().add(new BasicPage("New Page"));
+		currentProject = new Project();
+		contentsPage.tree.getRoot().getChildren().add(new TreeItem<>(new BasicPage("New Page")));
 		
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	    
@@ -59,22 +59,20 @@ public class Main extends Application
 		
 		Scene scene = new Scene(borderPane,screenSize.getWidth()/1.2,screenSize.getHeight()/1.2);			
 		scene.addEventFilter(MouseEvent.MOUSE_MOVED, (event) -> {
-		    	mouseDeltaX = mousePosX-event.getSceneX();
-		 		mouseDeltaY = mousePosY-event.getSceneY();
-		 		mousePosX = event.getSceneX();
-		 		mousePosY = event.getSceneY();	
+		    mouseDeltaX = mousePosX-event.getSceneX();
+		 	mouseDeltaY = mousePosY-event.getSceneY();
+		 	mousePosX = event.getSceneX();
+		 	mousePosY = event.getSceneY();	
 		});
 		
-		scene.addEventFilter(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
-		    final KeyCombination keyComb = new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN);
-		    public void handle(KeyEvent event) {
-		        if (keyComb.match(event)) {
-					if(topMenu.currentFile!=null && topMenu.currentFile.exists()) 
-						topMenu.save(topMenu.currentFile);
-					else 
-						topMenu.saveAs();
-		            event.consume();
-		        }
+		scene.addEventFilter(KeyEvent.KEY_PRESSED, (event)-> {
+		    KeyCombination saveComb = new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN);
+		    if (saveComb.match(event)) {
+		    	if(topMenu.currentFile!=null && topMenu.currentFile.exists()) 
+					topMenu.save(topMenu.currentFile);
+				else 
+					topMenu.saveAs();
+		           event.consume();
 		    }
 		});	
 		mainStage.setOnCloseRequest((event)->{ 
@@ -85,7 +83,7 @@ public class Main extends Application
 			}
 		});
 		mainStage.setScene(scene);
-		mainStage.setTitle("Genetrix ver-1.5.4");
+		mainStage.setTitle("Genetrix ver-1.5.5");
 		mainStage.show();
 		loadPreferences();
 	}

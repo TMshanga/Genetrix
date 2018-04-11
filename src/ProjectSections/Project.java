@@ -20,23 +20,15 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 
-import dataStructures.Tree;
-import dataStructures.Tree.Node;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.control.TreeItem;
 import javafx.scene.image.Image;
+import main.ContentsPage;
 import main.Main;
 
 public class Project{	
 	public BiMap<String,Image> imageMap = HashBiMap.create();
-	public BiMap<String,Node<Page>> pageMap = HashBiMap.create();
-	public Tree<Page> pageTree = new Tree<>(new Book());
-	
-	public Project() {
-		this("Book");
-	}
-	public Project(String title) {
-		pageTree = new Tree<Page>(new Book(title));
-	}
+	public BiMap<String,TreeItem<Page>> pageMap = HashBiMap.create();
 	
 	public byte[] encode() {
 		byte[] treeData = encodeTree();
@@ -47,8 +39,8 @@ public class Project{
 		return Bytes.concat(Ints.toByteArray(data.length),data);
 	}
 	public void decode(byte[] data) {
-		pageMap = HashBiMap.create();
-		pageTree = new Tree<>(new Book());
+		pageMap.clear();
+		Main.contentsPage.tree.setRoot(new TreeItem<Page>());
 		
 		int treeDataLen = ByteBuffer.wrap(data, 4,4).getInt();
 		decodeTree(data,8,treeDataLen);
@@ -87,7 +79,7 @@ public class Project{
 		byte[] treeData = new byte[0];
 		
 		ArrayList<WrappedNode> nodeList = new ArrayList<WrappedNode>();		
-		wrapAllNodes(pageTree.getRoot(),null,null,nodeList);	
+		wrapAllNodes(Main.contentsPage.tree.getRoot(),null,null,nodeList);	
 		
 		for(WrappedNode preppedNode: nodeList){
 			byte[] encodedNode = preppedNode.encode();
@@ -103,13 +95,13 @@ public class Project{
 			WrappedNode wrappedNode = new WrappedNode();
 			int nodeLen = ByteBuffer.wrap(data,index,4).getInt();
 			wrappedNode.decode(data,index+4,nodeLen);	
-			Main.currentProject.pageTree.setNode(wrappedNode.address, wrappedNode.pageNode);	
+			ContentsPage.setNode(wrappedNode.address,Main.contentsPage.tree,wrappedNode.pageNode);
 			Main.currentProject.pageMap.put(wrappedNode.pageMapKey, wrappedNode.pageNode);
 			index += nodeLen+4;
 		}
 	}
 	
-	private void wrapAllNodes(Tree.Node<Page> pageNode, WrappedNode containedParent, ArrayList<Tree.Node<Page>> visited, ArrayList<WrappedNode> wrappedNodeList ) {
+	private void wrapAllNodes(TreeItem<Page> pageNode, WrappedNode containedParent, ArrayList<TreeItem<Page>> visited, ArrayList<WrappedNode> wrappedNodeList ) {
 		WrappedNode wrappedNode;
 		if (containedParent !=null) 
 			wrappedNode = new WrappedNode(pageNode,containedParent.address, containedParent.pageNode.getChildren().indexOf(pageNode));
@@ -117,10 +109,10 @@ public class Project{
 			wrappedNode = new WrappedNode(pageNode, new ArrayList<Integer>(), 0);
 		wrappedNodeList.add(wrappedNode);
 		if (visited == null)
-			visited = new ArrayList<Tree.Node<Page>>();
+			visited = new ArrayList<TreeItem<Page>>();
 		visited.add(pageNode);
 		for (int i = 0; i < pageNode.getChildren().size(); i++) {
-			Tree.Node<Page> childPage = pageNode.getChildren().get(i);
+			TreeItem<Page> childPage = pageNode.getChildren().get(i);
 			if (childPage != null && !visited.contains(childPage)) {
 				wrapAllNodes(childPage, wrappedNode, visited, wrappedNodeList);
 			}
@@ -128,18 +120,18 @@ public class Project{
 	}
 	
 	class WrappedNode{
-		Tree.Node<Page> pageNode;
+		TreeItem<Page> pageNode;
 		ArrayList<Integer> address = new ArrayList<Integer>(); 
 		String pageMapKey;
 		
 		WrappedNode(){}
-		WrappedNode(Tree.Node<Page> pageNode, ArrayList<Integer> parentAddress, int addressIndex, String pageMapKey){
+		WrappedNode(TreeItem<Page> pageNode, ArrayList<Integer> parentAddress, int addressIndex, String pageMapKey){
 			this.pageNode = pageNode;
 			this.pageMapKey = pageMapKey;
 			address.addAll(parentAddress);
 			address.add(addressIndex);
 		}
-		WrappedNode(Tree.Node<Page> pageNode, ArrayList<Integer> parentAddress, int addressIndex){
+		WrappedNode(TreeItem<Page> pageNode, ArrayList<Integer> parentAddress, int addressIndex){
 			this(pageNode,parentAddress,addressIndex,"");
 		}
 		public byte[] encode() {
@@ -150,7 +142,7 @@ public class Project{
 			addressData = Bytes.concat(Ints.toByteArray(addressData.length),addressData);
 			byte[] keyData = pageMapKey.getBytes();
 			keyData = Bytes.concat(Ints.toByteArray(keyData.length),keyData);
-			byte[] data = Bytes.concat(addressData,pageNode.data.encode());
+			byte[] data = Bytes.concat(addressData,pageNode.getValue().encode());
 			return Bytes.concat(keyData,data);
 		}
 		
@@ -173,7 +165,7 @@ public class Project{
 			if(pageType == Page.pageTypes.Book.toInt()) 	page = new Book();
 			page.decode(data, offset+keyDataLen+addressLen+8, length-(addressLen+keyDataLen+8));
 			
-			this.pageNode = new Node<Page>(page);
+			this.pageNode = new TreeItem<Page>(page);
 		}
 	}
 	
@@ -202,23 +194,23 @@ public class Project{
  	{
 		HashSet<String> unusedImageKeys = new HashSet<>();
 		unusedImageKeys.addAll(imageMap.keySet());
- 		clearUnusedImages(Main.currentProject.pageTree.getRoot(), unusedImageKeys);
+ 		clearUnusedImages(Main.contentsPage.tree.getRoot(), unusedImageKeys);
  		for(String key: unusedImageKeys) {
  			imageMap.remove(key);
  		}
  	}
 	
-	private void clearUnusedImages(Node<Page> node, Set<String> unusedImageKeys)
+	private void clearUnusedImages(TreeItem<Page> node, Set<String> unusedImageKeys)
  	{
-        if(node.data instanceof BasicPage) {
-        	String pageContent = ((BasicPage)node.data).htmlEditor.getHtmlText();
+        if(node.getValue() instanceof BasicPage) {
+        	String pageContent = ((BasicPage)node.getValue()).htmlEditor.getHtmlText();
         	for(String key: imageMap.keySet()) {
         		if(pageContent.contains("data/IMG" + key + ".png"))
         			unusedImageKeys.remove(key);
         	}
         }
  		for (int i = 0; i < node.getChildren().size(); i++) {
- 			Node<Page> n = node.getChildren().get(i);
+ 			TreeItem<Page> n = node.getChildren().get(i);
  			clearUnusedImages(n,unusedImageKeys);
  		}
  	}

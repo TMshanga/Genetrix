@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import javax.imageio.ImageIO;
@@ -18,12 +17,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.io.ByteStreams;
 
-import dataStructures.Tree.Node;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TreeItem;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Pair;
@@ -133,7 +132,6 @@ public class TopMenu {
 				byte[] bytes = ByteStreams.toByteArray(new FileInputStream(directory));
 				Main.currentProject.decode(bytes);		
 				Main.currentProject.readyAllImages();
-				Main.contentsPage.reassembleTreeView(Main.currentProject);
 		        currentFile = directory;
 		        currentFileDir = directory.getParentFile();
 			} catch (IOException e) {
@@ -150,54 +148,56 @@ public class TopMenu {
          
         if(directory == null){ System.out.println("No Directory selected");}
         else{
-        	HashMap<Node<Page>,Pair<String,String>> exportMap = new HashMap<>();
-        	initExportMap(Main.currentProject.pageTree.getRoot(),exportMap);
-        	for(Node<Page> page: exportMap.keySet()) {
+        	HashMap<TreeItem<Page>,Pair<String,String>> exportMap = new HashMap<>();
+        	initExportMap(Main.contentsPage.tree.getRoot(),exportMap);
+        	for(TreeItem<Page> page: exportMap.keySet()) {
         		String content ="";
-        		if(page.data instanceof BasicPage) {
-        			content = ((BasicPage)page.data).htmlEditor.getHtmlText();
-        			content = content.replace("contenteditable=\"true\"","");	            		
-        			String[] allKeys = StringUtils.substringsBetween(content, "<button onclick=\"pushPage(this.name)\" name=\"", "\" type=\"button\" id=\"pageLink\">");
-        			if(allKeys !=null)
-	        			for(String key: allKeys) {
-	        				Node<Page> reference = Main.currentProject.pageMap.get(key);
-	        				if(reference != null)
-	        					content = content.replaceAll("(<button onclick=\"pushPage\\(this.name\\)\" name=\"" + key + "\" type=\"button\" id=\"pageLink\">)(.*?)(<\\/button>)","<a href=\"" + exportMap.get(reference).getKey().replace(" ", "%20") +"\">$2<\\/a>");     
-	        				else
-	        					content = content.replaceAll("(<button onclick=\"pushPage\\(this.name\\)\" name=\"" + key + "\" type=\"button\" id=\"pageLink\">)(.*?)(<\\/button>)","$2");     
+        		if(page != Main.contentsPage.tree.getRoot()) {
+	        		if(page.getValue() instanceof BasicPage) {
+	        			content = ((BasicPage)page.getValue()).htmlEditor.getHtmlText();
+	        			content = content.replace("contenteditable=\"true\"","");	            		
+	        			String[] allKeys = StringUtils.substringsBetween(content, "<button onclick=\"pushPage(this.name)\" name=\"", "\" type=\"button\" id=\"pageLink\">");
+	        			if(allKeys !=null)
+		        			for(String key: allKeys) {
+		        				TreeItem<Page> reference = Main.currentProject.pageMap.get(key);
+		        				if(reference != null)
+		        					content = content.replaceAll("(<button onclick=\"pushPage\\(this.name\\)\" name=\"" + key + "\" type=\"button\" id=\"pageLink\">)(.*?)(<\\/button>)","<a href=\"" + exportMap.get(reference).getKey().replace(" ", "%20") +"\">$2<\\/a>");     
+		        				else
+		        					content = content.replaceAll("(<button onclick=\"pushPage\\(this.name\\)\" name=\"" + key + "\" type=\"button\" id=\"pageLink\">)(.*?)(<\\/button>)","$2");     
+		        			}
+	        			content = content.replaceAll("<img src=\"file:\\/\\/"+".*"+"\\/data\\/IMG","<img src=\"../data/IMG");	            		
+	        		}
+	        		else if (page.getValue() instanceof Folder) {
+	        			content = "<!DOCTYPE html><html><head></head><body><br><b>"+page.getValue().getTitle()+"</b><br><ul>";
+	        			for (TreeItem<Page> child : page.getChildren()) {
+	        				content += "<li><a href=\"" + exportMap.get(child).getKey().replace(" ", "%20") + "\">"+child.getValue().getTitle()+"</a></li>";
 	        			}
-        			content = content.replaceAll("<img src=\"file:\\/\\/"+".*"+"\\/data\\/IMG","<img src=\"../data/IMG");	            		
-        		}
-        		else if (page.data instanceof Folder) {
-        			content = "<!DOCTYPE html><html><head></head><body><br><b>"+page.data.getTitle()+"</b><br><ul>";
-        			for (Node<Page> child : page.getChildren()) {
-        				content += "<li><a href=\"" + exportMap.get(child).getKey().replace(" ", "%20") + "\">"+child.data.getTitle()+"</a></li>";
-        			}
-        			content += "</ul></body></html>";
-        		}
-        		
-    			if(page.getParent() == Main.currentProject.pageTree.getRoot()) {
-    				if(content.contains("</head>"))
-    					content = content.substring(0, content.indexOf("</head>"))+"<div><a href=../Root.html>"+"\n<< Parent Page"+"</a></div>" + content.substring(content.indexOf("</head>"));
-    				else
-    					content += "<div><a href=../Root.html>"+"\n<< Parent Page"+"</a></div>";
-    			}
-    			else {
-    				if(content.contains("</head>"))
-    					content = content.substring(0, content.indexOf("</head>"))+"<div><a href=\"" + exportMap.get(page.getParent()).getKey().replace(" ", "%20") +"\">"+"\n<< Parent Page"+"</a></div>"+ content.substring(content.indexOf("</head>"));
-    				else
-    					content += "<div><a href=\"" + exportMap.get(page.getParent()).getKey().replace(" ", "%20") +"\">"+"\n<< Parent Page"+"</a></div>";
-    			}   
+	        			content += "</ul></body></html>";
+	        		}
+	        		
+	    			if(page.getParent() == Main.contentsPage.tree.getRoot()) {
+	    				if(content.contains("</head>"))
+	    					content = content.substring(0, content.indexOf("</head>"))+"<div><a href=../Root.html>"+"\n<< Parent Page"+"</a></div>" + content.substring(content.indexOf("</head>"));
+	    				else
+	    					content += "<div><a href=../Root.html>"+"\n<< Parent Page"+"</a></div>";
+	    			}
+	    			else {
+	    				if(content.contains("</head>"))
+	    					content = content.substring(0, content.indexOf("</head>"))+"<div><a href=\"" + exportMap.get(page.getParent()).getKey().replace(" ", "%20") +"\">"+"\n<< Parent Page"+"</a></div>"+ content.substring(content.indexOf("</head>"));
+	    				else
+	    					content += "<div><a href=\"" + exportMap.get(page.getParent()).getKey().replace(" ", "%20") +"\">"+"\n<< Parent Page"+"</a></div>";
+	    			}   
+	        	}
     			exportMap.put(page, new Pair<>(exportMap.get(page).getKey(),content));
         	}
-        	File mainDir = new File(FilenameUtils.concat(directory.toString(), Main.currentProject.pageTree.getRoot().data.getTitle()));
+        	File mainDir = new File(FilenameUtils.concat(directory.toString(), Main.contentsPage.tree.getRoot().getValue().getTitle()));
         	File pageDir = new File(FilenameUtils.concat(mainDir.toString(), "pages"));
         	File dataDir = new File(FilenameUtils.concat(mainDir.toString(), "data"));
     		if(!mainDir.exists()) mainDir.mkdir();
     		if(!pageDir.exists()) pageDir.mkdir();
     		if(!dataDir.exists()) dataDir.mkdir();
 
-        	for(Node<Page> page: exportMap.keySet()) {
+        	for(TreeItem<Page> page: exportMap.keySet()) {
         		try {    			
         			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(FilenameUtils.concat(pageDir.toString(), exportMap.get(page).getKey())), "UTF-16"));    			
         			out.write(exportMap.get(page).getValue());
@@ -212,23 +212,23 @@ public class TopMenu {
 			try {
 				BufferedWriter out = new BufferedWriter(new FileWriter(FilenameUtils.concat(mainDir.toString(), "Root.html")));
 				StringBuilder contentsPage = new StringBuilder();
-				contentsPageToHtml(exportMap,Main.currentProject.pageTree.getRoot(),contentsPage);
+				contentsPageToHtml(exportMap,Main.contentsPage.tree.getRoot(),contentsPage);
 				out.write("<!DOCTYPE html><html><body>" + contentsPage.toString() + "</html></body>");
 				out.close();
 			} catch (IOException e) {e.printStackTrace();}
         }
 	}	
 	
-	public void initExportMap(Node<Page> page, HashMap<Node<Page>,Pair<String,String>> exportMap) {
+	public void initExportMap(TreeItem<Page> page, HashMap<TreeItem<Page>,Pair<String,String>> exportMap) {
 		if(!exportMap.containsKey(page))
-			exportMap.put(page,new Pair<>(page.data.getTitle()+" "+Arrays.toString(page.getAddress().toArray()).replaceAll("\\s+|\\[|\\]|,", "")+".html",""));
+			exportMap.put(page,new Pair<>(page.getValue().getTitle()+" "+page.hashCode()+".html",""));
 		for(int i =0;i<page.getChildren().size();i++) {
 			initExportMap(page.getChildren().get(i),exportMap);
 		}
 	}
 	
-	public void contentsPageToHtml(HashMap<Node<Page>,Pair<String,String>> exportMap ,Node<Page> page, StringBuilder content) {
-		content.append( "<li><a href=\"pages/" + exportMap.get(page).getKey().replace(" ", "%20") + "\">"+page.data.getTitle()+"</a></li>");
+	public void contentsPageToHtml(HashMap<TreeItem<Page>,Pair<String,String>> exportMap ,TreeItem<Page> page, StringBuilder content) {
+		content.append( "<li><a href=\"pages/" + exportMap.get(page).getKey().replace(" ", "%20") + "\">"+page.getValue().getTitle()+"</a></li>");
 		for(int i =0;i<page.getChildren().size();i++) {
 			content.append( "<ul>");
 			contentsPageToHtml(exportMap,page.getChildren().get(i),content);

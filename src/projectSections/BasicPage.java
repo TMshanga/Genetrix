@@ -1,7 +1,5 @@
 package projectSections;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -35,14 +33,11 @@ import javafx.stage.Stage;
 import main.ContentsPage;
 import main.Main;
 import main.TopMenu;
-import main.ContentsPage.MyTreeItem;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.io.Resources;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
-
-import dataStructures.Tree;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,7 +111,7 @@ public class BasicPage implements Page {
 					else refId = "-1";
 					if (!refId.equals("-1") && !refId.equals("\"-1\"") && !refId.equals("undefined")) {
 						if(Main.currentProject.pageMap.containsKey(refId))
-							if(Main.currentProject.pageMap.get(refId).getAncestor()!=null) {
+							if(ContentsPage.hasAncestor(Main.currentProject.pageMap.get(refId),Main.contentsPage.tree.getRoot())) {
 								if(htmlEditor.getScene() != Main.stage.getScene())
 									Main.pageViewer.detachPage(Main.currentProject.pageMap.get(refId));
 								else
@@ -302,8 +297,8 @@ public class BasicPage implements Page {
 	    
 	    link.setOnAction(new EventHandler<ActionEvent>() {
 	          @Override public void handle(ActionEvent event) {	            
-	      		TreeView<String> miniTree = new TreeView<>();
-	    		assembleTreeView(miniTree,Main.currentProject);
+	      		TreeView<Page> miniTree = new TreeView<>();
+	    		assembleTreeView(miniTree);
 	    		miniTree.setShowRoot(false);
 	    		Stage pageSelStage = new Stage();
 	    		pageSelStage.setScene(new Scene(new StackPane(miniTree), 300, 400));
@@ -313,13 +308,11 @@ public class BasicPage implements Page {
 	    		pageSelStage.getScene().getStylesheets().add(Main.styleFile);
 	    		pageSelStage.show();
 	    		
-	    		miniTree.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<TreeItem<String>>(){
-	    			@Override public void changed(ObservableValue<? extends TreeItem<String>> observable, TreeItem<String> oldValue, TreeItem<String> newValue) {
-	    				MyTreeItem<String> item = (MyTreeItem<String>)miniTree.getSelectionModel().getSelectedItem();
+	    		miniTree.getSelectionModel().selectedItemProperty().addListener((obsv,oldV,item) ->{
 	    				if (item != null) 
-	    					if (item.internalAddress.size() > 1) {
-	    						Tree.Node<Page> pageNode = Main.currentProject.pageTree.getNode(item.internalAddress);
-	    						if(pageNode.data!=BasicPage.this) {
+	    					if (item != Main.contentsPage.tree.getRoot()) {
+	    						TreeItem<Page> pageNode = item;
+	    						if(pageNode.getValue()!=BasicPage.this) {
 		    						if (!Main.currentProject.pageMap.containsValue(pageNode))
 		    							Main.currentProject.pageMap.put(UUID.randomUUID().toString(),pageNode);
 		    			   			String selection =  (String)webEngine.executeScript("window.getSelection().toString();");
@@ -327,7 +320,7 @@ public class BasicPage implements Page {
 		    						pageSelStage.close();	
 	    						}
 	    					}		
-	    			}}); 
+	    			}); 
 	          }});
 	    delink.setOnAction(new EventHandler<ActionEvent>() {
 			@Override public void handle(ActionEvent event) {
@@ -613,24 +606,18 @@ public class BasicPage implements Page {
         }
 	}
 	
-	public void assembleTreeView(TreeView<String> tree, Project project) {
-		ContentsPage.MyTreeItem<String>  root = new ContentsPage.MyTreeItem<String>();
+	public void assembleTreeView(TreeView<Page> tree) {
+		TreeItem<Page>  root = new TreeItem<Page>();
 		tree.setRoot(root);
-		assembleTreeView(project.pageTree.getRoot(), root, 0);
+		assembleTreeView(Main.contentsPage.tree.getRoot(), root, 0);
 	}
 
-	private void assembleTreeView(Tree.Node<Page> pageNode, MyTreeItem<String> ParentGUINode, int childArrayIndex) {
-		MyTreeItem<String> GUINode = ParentGUINode.branch(pageNode.data.getIcon() + " " + pageNode.data.getTitle());
-		GUINode.internalAddress.addAll(ParentGUINode.internalAddress);
-		GUINode.internalAddress.add(childArrayIndex);
+	private void assembleTreeView(TreeItem<Page> pageNode, TreeItem<Page> ParentGUINode, int childArrayIndex) {
+		TreeItem<Page> GUINode = pageNode;
+		ParentGUINode.getChildren().add(GUINode);
 		for (int i = 0; i < pageNode.getChildren().size(); i++) {
 			assembleTreeView(pageNode.getChildren().get(i), GUINode, i);
 		}
-	}
-	
-	@Override
-	public String getIcon() {
-		return "📝";
 	}
 
 	@Override
@@ -671,5 +658,10 @@ public class BasicPage implements Page {
 	public String readexternalFile(String file) throws IOException{
 		URL url = Resources.getResource(file);
 		return Resources.toString(url, Charsets.UTF_8);
+	}
+	
+	@Override
+	public String toString() {
+		return "📝 " +title;
 	}
 }

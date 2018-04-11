@@ -16,7 +16,6 @@ public interface Page
 	
 	public String getTitle();
 	public void setTitle(String title);
-	public String getIcon();
 	public byte[] encode();
 	public void decode(byte[] data, int offset, int length);
 	public Pane BuildPane();
