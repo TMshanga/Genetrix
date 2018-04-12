@@ -13,6 +13,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeItem;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import projectSections.Folder;
 import projectSections.Page;
@@ -82,14 +83,14 @@ public class PageViewer {
 				}
 			}
 			
-			Stage subStage = new Stage();
+			Scene scene;
 			if(pageNode.getValue() instanceof Folder)
-				subStage.setScene(new Scene(((Folder)pageNode.getValue()).BuildPane(pageNode), Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2, Toolkit.getDefaultToolkit().getScreenSize().getHeight()/1.2));
+				scene =new Scene(((Folder)pageNode.getValue()).BuildPane(pageNode), Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2, Toolkit.getDefaultToolkit().getScreenSize().getHeight()/1.2);
 			else
-				subStage.setScene(new Scene(pageNode.getValue().BuildPane(), Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2, Toolkit.getDefaultToolkit().getScreenSize().getHeight()/1.2));
+				scene =new Scene(pageNode.getValue().BuildPane(), Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2, Toolkit.getDefaultToolkit().getScreenSize().getHeight()/1.2);
 			
-			subStage.setTitle(pageNode.getValue().getTitle());
-			subStage.getScene().getStylesheets().add(Main.styleFile);
+			Stage subStage = Main.createSubStage(scene, pageNode.getValue().getTitle(),Modality.NONE);
+			subStage.initOwner(null); //to stop it from always being on top
 			subStage.show();
 			subStage.setUserData(pageNode);	
 			subStage.iconifiedProperty().addListener( (obsv,oldV,newV) -> {
@@ -109,7 +110,7 @@ public class PageViewer {
 		}
 	}
 	
-	class CustomTab extends Tab{
+	public class CustomTab extends Tab{
 		public String pageMapKey;
 		CustomTab(String title, TreeItem<Page> pageNode ){
 			super(title);

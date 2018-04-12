@@ -40,7 +40,9 @@ public class Note implements Page{
 	}
 
 	@Override public BorderPane BuildPane() {
+		textArea.getStylesheets().clear();
 		textArea.getStylesheets().add(Main.styleFile);
+		textArea.setStyle("-fx-font-size: 1.3em;");
 		BorderPane borderPane = new BorderPane(textArea);
 		return borderPane;
 	}

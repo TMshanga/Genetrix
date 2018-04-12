@@ -242,33 +242,28 @@ public class ContentsPage {
 	}
 
 	class renameAction implements EventHandler<ActionEvent> {
+		@SuppressWarnings("unchecked")
 		@Override
 		public void handle(ActionEvent event) {
 			if(tree.getSelectionModel().getSelectedItem() !=null) {
 				TreeItem<Page> node = tree.getSelectionModel().getSelectedItem();
 	
-				Stage renameStage = new Stage();
 				
 				TextField field = new TextField(node.getValue().getTitle());
 				StackPane pane = new StackPane(field);
-				pane.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
-					@Override
-					public void handle(KeyEvent t) {
-						if (t.getCode() == KeyCode.ENTER) {
-							Page page = node.getValue();
-							page.setTitle(field.getText());
-							node.setValue(null);
-							node.setValue(page); //refreshing the displayed text				
-							renameStage.close();
-						}
+				Stage renameStage = Main.createSubStage(new Scene(pane, 300, field.getMinHeight()), "Rename", Modality.APPLICATION_MODAL);
+				pane.addEventHandler(KeyEvent.KEY_PRESSED, (keyEvent) ->{
+					if (keyEvent.getCode() == KeyCode.ENTER) {
+						Page page = node.getValue();
+						page.setTitle(field.getText());
+						node.setValue(null);
+						node.setValue(page); //refreshing the displayed text
+						Main.pageViewer.tabPane.getTabs().stream().map(t -> (CustomTab)t)
+						.filter(t->Main.currentProject.pageMap.containsKey(t.pageMapKey))
+						.forEach(t -> t.setText(Main.currentProject.pageMap.get(t.pageMapKey).getValue().getTitle()));
+						renameStage.close();
 					}
 				});
-				renameStage.setScene(new Scene(pane, 300, field.getMinHeight()));
-	    		renameStage.getScene().getStylesheets().add(Main.styleFile);
-				renameStage.setTitle("Rename");
-				renameStage.initOwner(Main.stage);
-				renameStage.initModality(Modality.APPLICATION_MODAL);
-				renameStage.requestFocus();
 				renameStage.show();
 			}
 		}
@@ -289,18 +284,18 @@ public class ContentsPage {
  			}
  		}
  		Main.currentProject.pageMap.inverse().remove(node);
- 		for (int i = 0;i<node.getChildren().size();i++) {
-	 		deepDelete(node.getChildren().get(i));
- 		}
+ 		node.getChildren().forEach(n ->deepDelete(n));
  	}
  	
  	public void deepCopy(TreeItem<Page> node, TreeItem<Page> clone)
  	{		
 		if(node.getValue() instanceof BasicPage) 
  			clone.setValue(new BasicPage(node.getValue().getTitle(),((BasicPage)node.getValue()).htmlEditor.getHtmlText()));
- 		else if (clone.getValue() instanceof Book) 
+ 		else if (node.getValue() instanceof Note) 
+ 			clone.setValue(new Note(node.getValue().getTitle(),((Note)node.getValue()).textArea.getText()));
+		else if (node.getValue() instanceof Book) 
  			clone.setValue(new Book(node.getValue().getTitle()));
- 		else if (clone.getValue() instanceof Folder) 
+ 		else if (node.getValue() instanceof Folder) 
  			clone.setValue(new Folder(node.getValue().getTitle()));
  		for (int i = 0;i<node.getChildren().size();i++) {
 	 		TreeItem<Page> childClone = new TreeItem<>();

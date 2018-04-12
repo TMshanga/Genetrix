@@ -3,6 +3,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.TreeItem;
 import javafx.scene.layout.*;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import projectSections.BasicPage;
 import projectSections.Project;
@@ -141,6 +142,19 @@ public class Main extends Application
 		 	mousePosX = event.getSceneX();
 		 	mousePosY = event.getSceneY();	
 		});
+	}
+	
+	public static Stage createSubStage(Scene scene, String name, Modality modality) {
+		Stage stage = new Stage();
+		scene.getStylesheets().add(Main.styleFile);
+		stage.setScene(scene);
+		stage.getScene().getStylesheets().add(Main.styleFile);
+		stage.setTitle("Rename");
+		stage.initOwner(Main.stage);
+		stage.initModality(modality);
+		stage.setAlwaysOnTop(false);
+		stage.requestFocus();
+		return stage;
 	}
 	
 	public static void main(String[] args)

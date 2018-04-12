@@ -299,12 +299,7 @@ public class BasicPage implements Page {
 	      		TreeView<Page> miniTree = new TreeView<>();
 	    		miniTree.setRoot(Main.contentsPage.tree.getRoot());
 	    		miniTree.setShowRoot(true);
-	    		Stage pageSelStage = new Stage();
-	    		pageSelStage.setScene(new Scene(new StackPane(miniTree), 300, 400));
-	    		pageSelStage.setTitle("Select Page");
-	    		pageSelStage.initModality(Modality.APPLICATION_MODAL);
-	    		pageSelStage.requestFocus();
-	    		pageSelStage.getScene().getStylesheets().add(Main.styleFile);
+	    		Stage pageSelStage = Main.createSubStage(new Scene(new StackPane(miniTree), 300, 400), "Select Page", Modality.APPLICATION_MODAL);
 	    		pageSelStage.show();
 	    		
 	    		miniTree.getSelectionModel().selectedItemProperty().addListener((obsv,oldV,item) ->{
@@ -482,13 +477,7 @@ public class BasicPage implements Page {
 	    addFilterSlider(gridPane,imageId,"Hue (degrees):","hue-rotate","deg",360,0,9);
 	    addFilterSlider(gridPane,imageId,"Opacity (%):","opacity","%",100,100,10);
 	    
-	    Scene scene = new Scene(gridPane);
-		imageStage.setScene(scene);
-		imageStage.setTitle("Configure Image");
-		imageStage.initModality(Modality.APPLICATION_MODAL);
-		imageStage.requestFocus();
-		imageStage.getScene().getStylesheets().add(Main.styleFile);
-		imageStage.show();
+	    Main.createSubStage(new Scene(gridPane),"Configure Image", Modality.APPLICATION_MODAL).show();
 	}
 	
 	public void addFilterSlider(GridPane gridPane, String imageID, String labelText, String filterAttr, String unit, int length, int current, int row) {
