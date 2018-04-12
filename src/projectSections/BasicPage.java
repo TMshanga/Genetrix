@@ -14,7 +14,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
-import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.input.InputEvent;
@@ -298,8 +297,8 @@ public class BasicPage implements Page {
 	    link.setOnAction(new EventHandler<ActionEvent>() {
 	          @Override public void handle(ActionEvent event) {	            
 	      		TreeView<Page> miniTree = new TreeView<>();
-	    		assembleTreeView(miniTree);
-	    		miniTree.setShowRoot(false);
+	    		miniTree.setRoot(Main.contentsPage.tree.getRoot());
+	    		miniTree.setShowRoot(true);
 	    		Stage pageSelStage = new Stage();
 	    		pageSelStage.setScene(new Scene(new StackPane(miniTree), 300, 400));
 	    		pageSelStage.setTitle("Select Page");
@@ -310,13 +309,12 @@ public class BasicPage implements Page {
 	    		
 	    		miniTree.getSelectionModel().selectedItemProperty().addListener((obsv,oldV,item) ->{
 	    				if (item != null) 
-	    					if (item != Main.contentsPage.tree.getRoot()) {
-	    						TreeItem<Page> pageNode = item;
-	    						if(pageNode.getValue()!=BasicPage.this) {
-		    						if (!Main.currentProject.pageMap.containsValue(pageNode))
-		    							Main.currentProject.pageMap.put(UUID.randomUUID().toString(),pageNode);
+	    					if (item != miniTree.getRoot()) {
+	    						if(item.getValue()!=BasicPage.this) {
+		    						if (!Main.currentProject.pageMap.containsValue(item))
+		    							Main.currentProject.pageMap.put(UUID.randomUUID().toString(),item);
 		    			   			String selection =  (String)webEngine.executeScript("window.getSelection().toString();");
-		    			   			webEngine.executeScript(String.format(JSReplaceSelWithHTML,String.format("<button onclick='pushPage(this.name)' name='%s' type='button' id='pageLink'>%s</button>",Main.currentProject.pageMap.inverse().get(pageNode),selection.replace("\n","<br>"))));
+		    			   			webEngine.executeScript(String.format(JSReplaceSelWithHTML,String.format("<button onclick='pushPage(this.name)' name='%s' type='button' id='pageLink'>%s</button>",Main.currentProject.pageMap.inverse().get(item),selection.replace("\n","<br>"))));
 		    						pageSelStage.close();	
 	    						}
 	    					}		
@@ -605,20 +603,6 @@ public class BasicPage implements Page {
 			htmlEditor.setHtmlText(htmlText);		
         }
 	}
-	
-	public void assembleTreeView(TreeView<Page> tree) {
-		TreeItem<Page>  root = new TreeItem<Page>();
-		tree.setRoot(root);
-		assembleTreeView(Main.contentsPage.tree.getRoot(), root, 0);
-	}
-
-	private void assembleTreeView(TreeItem<Page> pageNode, TreeItem<Page> ParentGUINode, int childArrayIndex) {
-		TreeItem<Page> GUINode = pageNode;
-		ParentGUINode.getChildren().add(GUINode);
-		for (int i = 0; i < pageNode.getChildren().size(); i++) {
-			assembleTreeView(pageNode.getChildren().get(i), GUINode, i);
-		}
-	}
 
 	@Override
 	public String getTitle() {
@@ -662,6 +646,6 @@ public class BasicPage implements Page {
 	
 	@Override
 	public String toString() {
-		return "📝 " +title;
+		return "📄 " +title;
 	}
 }

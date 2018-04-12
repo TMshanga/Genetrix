@@ -14,9 +14,7 @@ public class Trie extends Tree<Character>{
 	}
 	
     public void buildLanguageTrie(ArrayList<String> wordList) {
-    	this.setRoot(new Node<Character>('\0'));
-    	for(int i=0;i<wordList.size();i++)
-    		addWord(wordList.get(i));
+    	wordList.forEach((w) ->addWord(w));
     }
     
     public void addWords(String... words) {
@@ -33,7 +31,7 @@ public class Trie extends Tree<Character>{
 		currentNode.add(new Node<Character>('\0'));
     }
 
-    public boolean strictlyHasWord(String word) {
+    public boolean hasExactWord(String word) {
     	Node<Character> currentNode = (Node<Character>)getRoot();
     	char[] charArr = word.toCharArray();
     	for(int i=0;i<charArr.length;i++)
@@ -50,15 +48,14 @@ public class Trie extends Tree<Character>{
     	wordForms[0] = word;
     	wordForms[1] = WordUtils.uncapitalize(word);
     	wordForms[2] = word.toUpperCase();
-    	
+    	    	
     	for (String form: wordForms)
-    		if (strictlyHasWord(form)) return true;
-
+    		if (hasExactWord(form)) return true;
     	return false;
     }
 
     public void removeWord(String word){
-    	if(strictlyHasWord(word)) {
+    	if(hasExactWord(word)) {
 	  		Node<Character> currentNode = (Node<Character>)getRoot();
 	    	char[] charArr = word.toCharArray();
 			for(int c=0;c<charArr.length;c++){ //the last letter is reached before backtracking
@@ -75,21 +72,21 @@ public class Trie extends Tree<Character>{
     public ArrayList<String> getSuggestions(String word){
     	int mistakenCharNo = (word.length()<=6)?1:(word.length()<=8)?2:3;
     	boolean checkOtherLengths = (word.length()<=7)?false:true;
-    	return getSuggestions(word, mistakenCharNo, checkOtherLengths);
+    	return includeOtherLengths(word, mistakenCharNo, checkOtherLengths);
     }
     
-    public ArrayList<String> getSuggestions(String word, int mistakenCharNo, boolean checkOtherLengths){
+    public ArrayList<String> includeOtherLengths(String word, int mistakenCharNo, boolean checkOtherLengths){
     	ArrayList<String> suggestions = new ArrayList<String>();
 		if(checkOtherLengths) {
 	    	for(int i=0;i<word.length();i++)
-	    		getSuggestionsStage2(suggestions,(new StringBuilder(word).deleteCharAt(i)).toString(), mistakenCharNo,-1);	
+	    		includeMistakeCombinations(suggestions,(new StringBuilder(word).deleteCharAt(i)).toString(), mistakenCharNo,-1);	
 	    	for(int i=0;i<word.length();i++)
-	    		getSuggestionsStage2(suggestions,(new StringBuilder(word).insert(i, '_')).toString(), mistakenCharNo,i);	
+	    		includeMistakeCombinations(suggestions,(new StringBuilder(word).insert(i, '_')).toString(), mistakenCharNo,i);	
 		}
-		getSuggestionsStage2(suggestions,word, mistakenCharNo,-1);
+		includeMistakeCombinations(suggestions,word, mistakenCharNo,-1);
     	return suggestions;
     }      
-    private void getSuggestionsStage2(ArrayList<String> suggestions,String word, int mistakenCharNo, int certainMistakeIndex){    	
+    private void includeMistakeCombinations(ArrayList<String> suggestions,String word, int mistakenCharNo, int certainMistakeIndex){    	
     	
     	ArrayList<ArrayList<Integer>> combinations = new ArrayList<ArrayList<Integer>>();
     	for(int i=1;i<=mistakenCharNo;i++)
@@ -99,13 +96,13 @@ public class Trie extends Tree<Character>{
 	    	combinations.get(i).add(certainMistakeIndex);
     	
 		for(int i=0;i<combinations.size();i++)
-	    	getSuggestionsStage3(getRoot(),word.toCharArray(),suggestions,0,combinations.get(i));
+	    	getSuggestions(getRoot(),word.toCharArray(),suggestions,0,combinations.get(i));
     }   
-    private void getSuggestionsStage3(Node<Character> currentNode, char[] originalWord, ArrayList<String> suggestions, int currentIndex, ArrayList<Integer> mistakeIndexes){
+    private void getSuggestions(Node<Character> currentNode, char[] originalWord, ArrayList<String> suggestions, int currentIndex, ArrayList<Integer> mistakeIndexes){
     	for(;currentIndex<originalWord.length;currentIndex++) {
     		if (mistakeIndexes.contains(currentIndex)) {
     			for(Node<Character> child:currentNode.getChildren())
-    				getSuggestionsStage3(child, originalWord, suggestions, currentIndex+1, mistakeIndexes);
+    				getSuggestions(child, originalWord, suggestions, currentIndex+1, mistakeIndexes);
 				return;
     		}
     		else if (currentNode.hasChild(originalWord[currentIndex]))
@@ -152,8 +149,6 @@ public class Trie extends Tree<Character>{
 	}
 }
 }
-
-
 
 class Tree<T> {
     private Node<T> root;

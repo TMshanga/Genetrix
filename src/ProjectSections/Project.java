@@ -101,10 +101,14 @@ public class Project{
 		}
 	}
 	
-	private void wrapAllNodes(TreeItem<Page> pageNode, WrappedNode containedParent, ArrayList<TreeItem<Page>> visited, ArrayList<WrappedNode> wrappedNodeList ) {
+	private void wrapAllNodes(TreeItem<Page> pageNode, WrappedNode parent, ArrayList<TreeItem<Page>> visited, ArrayList<WrappedNode> wrappedNodeList ) {
 		WrappedNode wrappedNode;
-		if (containedParent !=null) 
-			wrappedNode = new WrappedNode(pageNode,containedParent.address, containedParent.pageNode.getChildren().indexOf(pageNode));
+		if (parent !=null) {
+			if(Main.currentProject.pageMap.inverse().containsKey(pageNode))
+				wrappedNode = new WrappedNode(pageNode,parent.address, parent.pageNode.getChildren().indexOf(pageNode),Main.currentProject.pageMap.inverse().get(pageNode));
+			else
+				wrappedNode = new WrappedNode(pageNode,parent.address, parent.pageNode.getChildren().indexOf(pageNode));
+		}
 		else
 			wrappedNode = new WrappedNode(pageNode, new ArrayList<Integer>(), 0);
 		wrappedNodeList.add(wrappedNode);
@@ -125,15 +129,16 @@ public class Project{
 		String pageMapKey;
 		
 		WrappedNode(){}
+		WrappedNode(TreeItem<Page> pageNode, ArrayList<Integer> parentAddress, int addressIndex){
+			this(pageNode,parentAddress,addressIndex,"");
+		}
 		WrappedNode(TreeItem<Page> pageNode, ArrayList<Integer> parentAddress, int addressIndex, String pageMapKey){
 			this.pageNode = pageNode;
 			this.pageMapKey = pageMapKey;
 			address.addAll(parentAddress);
 			address.add(addressIndex);
 		}
-		WrappedNode(TreeItem<Page> pageNode, ArrayList<Integer> parentAddress, int addressIndex){
-			this(pageNode,parentAddress,addressIndex,"");
-		}
+
 		public byte[] encode() {
 			byte[] addressData = new byte[0];
 			for(Integer index: address) {
@@ -160,9 +165,10 @@ public class Project{
 			
 			Page page = null;		
 			int pageType = ByteBuffer.wrap(data, offset+keyDataLen+addressLen+8, 4).getInt();
-			if(pageType == Page.pageTypes.BasicPage.toInt()) 	page = new BasicPage();
-			if(pageType == Page.pageTypes.Folder.toInt())  page = new Folder();
+			if(pageType == Page.pageTypes.BasicPage.toInt())page = new BasicPage();
+			if(pageType == Page.pageTypes.Folder.toInt())  	page = new Folder();
 			if(pageType == Page.pageTypes.Book.toInt()) 	page = new Book();
+			if(pageType == Page.pageTypes.Note.toInt()) 	page = new Note();
 			page.decode(data, offset+keyDataLen+addressLen+8, length-(addressLen+keyDataLen+8));
 			
 			this.pageNode = new TreeItem<Page>(page);
@@ -195,9 +201,7 @@ public class Project{
 		HashSet<String> unusedImageKeys = new HashSet<>();
 		unusedImageKeys.addAll(imageMap.keySet());
  		clearUnusedImages(Main.contentsPage.tree.getRoot(), unusedImageKeys);
- 		for(String key: unusedImageKeys) {
- 			imageMap.remove(key);
- 		}
+ 		unusedImageKeys.forEach((k)->imageMap.remove(k));
  	}
 	
 	private void clearUnusedImages(TreeItem<Page> node, Set<String> unusedImageKeys)

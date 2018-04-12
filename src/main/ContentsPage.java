@@ -60,21 +60,27 @@ public class ContentsPage {
 		title.setFont(Font.font("Tahoma", FontWeight.BOLD, 20));
 		// Options
 		Menu pageMenu = new Menu("+🗍");
-		MenuItem newPage = new MenuItem("new Page +📝");
-		newPage.setOnAction(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event) {
-				tree.getRoot().getChildren().add(new TreeItem<>(new BasicPage("New Page")));
-			}
+		MenuItem newPage = new MenuItem("new Page +📄");
+		MenuItem newFolder = new MenuItem("new Folder +📁");
+		MenuItem newNote = new MenuItem("new Note +🗒");
+		newPage.setOnAction((event) ->{
+			tree.getRoot().getChildren().add(new TreeItem<>(new BasicPage("New Page")));
+		});		
+		newFolder.setOnAction((event) ->{
+			tree.getRoot().getChildren().add(new TreeItem<>(new Folder("New Folder")));
 		});
+		newNote.setOnAction((event) ->{
+			tree.getRoot().getChildren().add(new TreeItem<>(new Note("New Note")));
+		});
+		
 		Menu templateMenu = new Menu("+🗐");
-		MenuItem characterPage = new MenuItem("Character +📄");
-		MenuItem locationPage = new MenuItem("Location +📄");
-		MenuItem eventPage = new MenuItem("Event +📄");
-		MenuItem motifPage = new MenuItem("Motif/Symbol +📄");
-		MenuItem threeActPage = new MenuItem("Three Act Structure +📄");
-		MenuItem eightArcPage = new MenuItem("Eight Arc Structure +📄");
-		MenuItem episodicPage = new MenuItem("Episodic Structure +📄");
+		MenuItem characterPage = new MenuItem("Character +📃");
+		MenuItem locationPage = new MenuItem("Location +📃");
+		MenuItem eventPage = new MenuItem("Event +📃");
+		MenuItem motifPage = new MenuItem("Motif/Symbol +📃");
+		MenuItem threeActPage = new MenuItem("Three Act Structure +📃");
+		MenuItem eightArcPage = new MenuItem("Eight Arc Structure +📃");
+		MenuItem episodicPage = new MenuItem("Episodic Structure +📃");
 		
 		characterPage.setOnAction( (event) ->{
 			addTemplate("templates/Character.htm","New Character");
@@ -98,15 +104,7 @@ public class ContentsPage {
 			addTemplate("templates/EpisodicStructure.htm","New Episodic Structure");
 		});
 
-		MenuItem newFolder = new MenuItem("new Folder +📁");
-		newFolder.setOnAction(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event) {
-				tree.getRoot().getChildren().add(new TreeItem<>(new Folder("New Folder")));
-			}
-		});
-
-		pageMenu.getItems().addAll(newPage, newFolder);
+		pageMenu.getItems().addAll(newPage, newFolder, newNote);
 		templateMenu.getItems().addAll(characterPage,locationPage,eventPage,motifPage,threeActPage,eightArcPage,episodicPage);
 		// Tree
 		tree.setContextMenu(getContextMenu());
@@ -151,7 +149,7 @@ public class ContentsPage {
 						TreeItem<Page> targetNode = treeCell.getTreeItem();
 						TreeItem<Page> priorNode = tree.getSelectionModel().getSelectedItem();
 
-						if (priorNode != targetNode && tree.getRoot() != targetNode && !hasAncestor(targetNode,priorNode)) {
+						if (targetNode !=null && priorNode != targetNode && tree.getRoot() != targetNode && !hasAncestor(targetNode,priorNode)) {
 							priorNode.getParent().getChildren().remove(priorNode);
 							if (Main.mouseDeltaX > 0) {
 								targetNode.getChildren().add(priorNode);
@@ -250,9 +248,8 @@ public class ContentsPage {
 				TreeItem<Page> node = tree.getSelectionModel().getSelectedItem();
 	
 				Stage renameStage = new Stage();
-				renameStage.setTitle("Rename");
-				renameStage.initOwner(Main.stage);
-				TextField field = new TextField();
+				
+				TextField field = new TextField(node.getValue().getTitle());
 				StackPane pane = new StackPane(field);
 				pane.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
 					@Override
@@ -267,6 +264,9 @@ public class ContentsPage {
 					}
 				});
 				renameStage.setScene(new Scene(pane, 300, field.getMinHeight()));
+	    		renameStage.getScene().getStylesheets().add(Main.styleFile);
+				renameStage.setTitle("Rename");
+				renameStage.initOwner(Main.stage);
 				renameStage.initModality(Modality.APPLICATION_MODAL);
 				renameStage.requestFocus();
 				renameStage.show();

@@ -28,6 +28,7 @@ import javafx.stage.FileChooser;
 import javafx.util.Pair;
 import projectSections.BasicPage;
 import projectSections.Folder;
+import projectSections.Note;
 import projectSections.Page;
 
 public class TopMenu {
@@ -132,6 +133,7 @@ public class TopMenu {
 				byte[] bytes = ByteStreams.toByteArray(new FileInputStream(directory));
 				Main.currentProject.decode(bytes);		
 				Main.currentProject.readyAllImages();
+				Main.contentsPage.tree.getRoot().setExpanded(true);
 		        currentFile = directory;
 		        currentFileDir = directory.getParentFile();
 			} catch (IOException e) {
@@ -168,11 +170,16 @@ public class TopMenu {
 	        			content = content.replaceAll("<img src=\"file:\\/\\/"+".*"+"\\/data\\/IMG","<img src=\"../data/IMG");	            		
 	        		}
 	        		else if (page.getValue() instanceof Folder) {
-	        			content = "<!DOCTYPE html><html><head></head><body><br><b>"+page.getValue().getTitle()+"</b><br><ul>";
+	        			content = "<!DOCTYPE html><html><head></head><body><br><b>"+"Folder: "+page.getValue().getTitle()+"</b><br><ul>";
 	        			for (TreeItem<Page> child : page.getChildren()) {
 	        				content += "<li><a href=\"" + exportMap.get(child).getKey().replace(" ", "%20") + "\">"+child.getValue().getTitle()+"</a></li>";
 	        			}
 	        			content += "</ul></body></html>";
+	        		}
+	        		else if (page.getValue() instanceof Note) {
+	        			content = "<!DOCTYPE html><html><head></head><body><br><b>"+"Note: "+page.getValue().getTitle()+"</b><br><ul><p>";
+	        			content += ((Note)page.getValue()).textArea.getText();
+	        			content += "</p></ul></body></html>";
 	        		}
 	        		
 	    			if(page.getParent() == Main.contentsPage.tree.getRoot()) {

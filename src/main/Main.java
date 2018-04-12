@@ -29,6 +29,7 @@ import dataStructures.Trie;
 
 public class Main extends Application
 {	
+	final String title = "Genetrix ver-1.6.0";
 	public static String styleFile = TopMenu.styles.Modena.toString();
 	
 	public static Stage stage = new Stage();
@@ -36,11 +37,10 @@ public class Main extends Application
 	public static ContentsPage contentsPage = new ContentsPage();
 	public static PageViewer pageViewer = new PageViewer();
 	public static TopMenu topMenu= new TopMenu();
+	public static Trie languageTrie = new Trie();
 	
 	static double mousePosX=0, mousePosY=0;
 	public static double mouseDeltaX=0, mouseDeltaY=0;
-	
-	public static Trie languageTrie = new Trie();
 	
 
 	@Override public void start(Stage mainStage) throws Exception
@@ -50,31 +50,16 @@ public class Main extends Application
 		currentProject = new Project();
 		contentsPage.tree.getRoot().getChildren().add(new TreeItem<>(new BasicPage("New Page")));
 		
-		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-	    
 		BorderPane borderPane = new BorderPane();	
 		borderPane.setTop(topMenu.getMainMenu());
 		borderPane.setLeft(contentsPage.getContentsPage());		
 		borderPane.setCenter(pageViewer.viewerPane);
 		
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		Scene scene = new Scene(borderPane,screenSize.getWidth()/1.2,screenSize.getHeight()/1.2);			
-		scene.addEventFilter(MouseEvent.MOUSE_MOVED, (event) -> {
-		    mouseDeltaX = mousePosX-event.getSceneX();
-		 	mouseDeltaY = mousePosY-event.getSceneY();
-		 	mousePosX = event.getSceneX();
-		 	mousePosY = event.getSceneY();	
-		});
-		
-		scene.addEventFilter(KeyEvent.KEY_PRESSED, (event)-> {
-		    KeyCombination saveComb = new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN);
-		    if (saveComb.match(event)) {
-		    	if(topMenu.currentFile!=null && topMenu.currentFile.exists()) 
-					topMenu.save(topMenu.currentFile);
-				else 
-					topMenu.saveAs();
-		           event.consume();
-		    }
-		});	
+		initHotKeys(scene);
+		initMouseDeltaPos(scene);
+
 		mainStage.setOnCloseRequest((event)->{ 
 			try {
 			Main.currentProject.clearImageDir(); savePreferences();
@@ -83,7 +68,7 @@ public class Main extends Application
 			}
 		});
 		mainStage.setScene(scene);
-		mainStage.setTitle("Genetrix ver-1.5.5");
+		mainStage.setTitle(title);
 		mainStage.show();
 		loadPreferences();
 	}
@@ -97,8 +82,10 @@ public class Main extends Application
 	public static void savePreferences() {
 		StringBuilder prefs = new StringBuilder();
 		prefs.append("<style>" + styleFile + "<style>");
-		if(topMenu.currentFileDir !=null) prefs.append("<saveDir>" + topMenu.currentFileDir + "<saveDir>");
-		if(topMenu.currentFileDir !=null) prefs.append("<imageDir>" + topMenu.currentImageFileDir + "<imageDir>");
+		if(topMenu.currentFileDir !=null) {
+			prefs.append("<saveDir>" + topMenu.currentFileDir + "<saveDir>");
+			prefs.append("<imageDir>" + topMenu.currentImageFileDir + "<imageDir>");
+		}
 		
 		String jarDir = FilenameUtils.concat(getJarDir(),"data");
 		if(!new File(jarDir).exists()) new File(jarDir).mkdir();
@@ -122,6 +109,7 @@ public class Main extends Application
 			}
 		}
 	}
+	
 	public static String getJarDir() {
 		try {
 			String jarDir = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -131,6 +119,28 @@ public class Main extends Application
 			e.printStackTrace();
 			return "..";
 		}
+	}
+	
+	public static void initHotKeys(Scene scene) {
+		scene.addEventFilter(KeyEvent.KEY_PRESSED, (event)-> {
+		    KeyCombination saveComb = new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN);
+		    if (saveComb.match(event)) {
+		    	if(topMenu.currentFile!=null && topMenu.currentFile.exists()) 
+					topMenu.save(topMenu.currentFile);
+				else 
+					topMenu.saveAs();
+		           event.consume();
+		    }
+		});	
+	}
+	
+	public static void initMouseDeltaPos(Scene scene) {
+		scene.addEventFilter(MouseEvent.MOUSE_MOVED, (event) -> {
+		    mouseDeltaX = mousePosX-event.getSceneX();
+		 	mouseDeltaY = mousePosY-event.getSceneY();
+		 	mousePosX = event.getSceneX();
+		 	mousePosY = event.getSceneY();	
+		});
 	}
 	
 	public static void main(String[] args)

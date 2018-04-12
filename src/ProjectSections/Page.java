@@ -4,7 +4,7 @@ import javafx.scene.layout.Pane;
 public interface Page
 {
 	public static enum pageTypes {
-	    BasicPage(0), Folder(1), Book(2);    
+	    BasicPage(0), Folder(1), Book(2), Note(3);    
 	    private int intVal;
 	    pageTypes(int intVal) {
 	        this.intVal = intVal;
