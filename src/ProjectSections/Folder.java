@@ -48,7 +48,7 @@ public class Folder implements Page{
 		VBox vbox = new VBox(listView,refresh);
 		
 		for (TreeItem<Page> child: folderNode.getChildren()) {
-			listView.getItems().add(new pageString(child.getValue().getTitle(),child));
+			listView.getItems().add(new pageString(child));
 		}			
 		listView.getSelectionModel().selectedItemProperty().addListener((obsv,oldV,newV)->{
 			if (newV!=null) {
@@ -61,7 +61,7 @@ public class Folder implements Page{
 				else {
 					listView.getItems().clear();
 					for (TreeItem<Page> child: folderNode.getChildren()) {
-						listView.getItems().add(new pageString(child.getValue().getTitle(),child));
+						listView.getItems().add(new pageString(child));
 					}	
 				}
 			}
@@ -70,7 +70,7 @@ public class Folder implements Page{
 		refresh.setOnAction((event)->{
 			listView.getItems().clear();
 			for (TreeItem<Page> child: folderNode.getChildren()) {
-				listView.getItems().add(new pageString(child.getValue().getTitle(),child));
+				listView.getItems().add(new pageString(child));
 			}	
 		});
 		vbox.setAlignment(Pos.TOP_CENTER);
@@ -80,8 +80,8 @@ public class Folder implements Page{
 	class pageString{
 		public TreeItem<Page> page;
 		public String string;
-		pageString(String string, TreeItem<Page> page){
-			this.string = string;
+		pageString(TreeItem<Page> page){
+			this.string = page.getValue().getTitle();
 			this.page = page;
 		}
 		@Override

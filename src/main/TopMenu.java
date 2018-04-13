@@ -67,7 +67,7 @@ public class TopMenu {
 		MenuItem oscar  = new MenuItem("Oscar");
 		MenuItem luke  = new MenuItem("Luke");
 		MenuItem vincent  = new MenuItem("Vincent");
-
+		
 		fileMenu.getItems().addAll(load,save,saveAs,new SeparatorMenuItem(),export);
 		
 		Menu themesMenu = new Menu("Themes");	
@@ -150,11 +150,14 @@ public class TopMenu {
          
         if(directory == null){ System.out.println("No Directory selected");}
         else{
+    		final String exportStyle = "<style>*{font-family: calibri;}</style>";
         	HashMap<TreeItem<Page>,Pair<String,String>> exportMap = new HashMap<>();
         	initExportMap(Main.contentsPage.tree.getRoot(),exportMap);
+        	
         	for(TreeItem<Page> page: exportMap.keySet()) {
         		String content ="";
         		if(page != Main.contentsPage.tree.getRoot()) {
+        			
 	        		if(page.getValue() instanceof BasicPage) {
 	        			content = ((BasicPage)page.getValue()).htmlEditor.getHtmlText();
 	        			content = content.replace("contenteditable=\"true\"","");	            		
@@ -169,17 +172,19 @@ public class TopMenu {
 		        			}
 	        			content = content.replaceAll("<img src=\"file:\\/\\/"+".*"+"\\/data\\/IMG","<img src=\"../data/IMG");	            		
 	        		}
+	        		
 	        		else if (page.getValue() instanceof Folder) {
-	        			content = "<!DOCTYPE html><html><head></head><body><br><b>"+"Folder: "+page.getValue().getTitle()+"</b><br><ul>";
+	        			content = "<!DOCTYPE html><html><head>"+ exportStyle +"</head><body><br><b>"+"Folder: "+page.getValue().getTitle()+"</b><br><ul>";
 	        			for (TreeItem<Page> child : page.getChildren()) {
 	        				content += "<li><a href=\"" + exportMap.get(child).getKey().replace(" ", "%20") + "\">"+child.getValue().getTitle()+"</a></li>";
 	        			}
 	        			content += "</ul></body></html>";
 	        		}
+	        		
 	        		else if (page.getValue() instanceof Note) {
-	        			content = "<!DOCTYPE html><html><head></head><body><br><b>"+"Note: "+page.getValue().getTitle()+"</b><br><ul><p>";
-	        			content += ((Note)page.getValue()).textArea.getText();
-	        			content += "</p></ul></body></html>";
+	        			content = "<!DOCTYPE html><html><head>"+ exportStyle +"</head><body><br><b>"+"Note: "+page.getValue().getTitle()+"</b><br><blockquote><p>";
+	        			content += ((Note)page.getValue()).textArea.getText().replaceAll("\n", "<br>");
+	        			content += "</p></blockquote></body></html>";
 	        		}
 	        		
 	    			if(page.getParent() == Main.contentsPage.tree.getRoot()) {
@@ -220,7 +225,7 @@ public class TopMenu {
 				BufferedWriter out = new BufferedWriter(new FileWriter(FilenameUtils.concat(mainDir.toString(), "Root.html")));
 				StringBuilder contentsPage = new StringBuilder();
 				contentsPageToHtml(exportMap,Main.contentsPage.tree.getRoot(),contentsPage);
-				out.write("<!DOCTYPE html><html><body>" + contentsPage.toString() + "</html></body>");
+				out.write("<!DOCTYPE html><html>"+ exportStyle +"<body>" + contentsPage.toString() + "</html></body>");
 				out.close();
 			} catch (IOException e) {e.printStackTrace();}
         }
@@ -229,17 +234,17 @@ public class TopMenu {
 	public void initExportMap(TreeItem<Page> page, HashMap<TreeItem<Page>,Pair<String,String>> exportMap) {
 		if(!exportMap.containsKey(page))
 			exportMap.put(page,new Pair<>(page.getValue().getTitle()+" "+page.hashCode()+".html",""));
-		for(int i =0;i<page.getChildren().size();i++) {
-			initExportMap(page.getChildren().get(i),exportMap);
-		}
+		
+		page.getChildren().forEach(p -> initExportMap(p,exportMap));
 	}
 	
 	public void contentsPageToHtml(HashMap<TreeItem<Page>,Pair<String,String>> exportMap ,TreeItem<Page> page, StringBuilder content) {
 		content.append( "<li><a href=\"pages/" + exportMap.get(page).getKey().replace(" ", "%20") + "\">"+page.getValue().getTitle()+"</a></li>");
-		for(int i =0;i<page.getChildren().size();i++) {
+		
+		page.getChildren().forEach(p -> {
 			content.append( "<ul>");
-			contentsPageToHtml(exportMap,page.getChildren().get(i),content);
-			content.append("</ul>");
-		}
+			contentsPageToHtml(exportMap,p,content);
+			content.append( "<ul>");
+		});
 	}
 }

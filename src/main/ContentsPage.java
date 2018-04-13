@@ -242,12 +242,10 @@ public class ContentsPage {
 	}
 
 	class renameAction implements EventHandler<ActionEvent> {
-		@SuppressWarnings("unchecked")
 		@Override
 		public void handle(ActionEvent event) {
 			if(tree.getSelectionModel().getSelectedItem() !=null) {
 				TreeItem<Page> node = tree.getSelectionModel().getSelectedItem();
-	
 				
 				TextField field = new TextField(node.getValue().getTitle());
 				StackPane pane = new StackPane(field);

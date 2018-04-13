@@ -100,8 +100,7 @@ public class BasicPage implements Page {
 				initHtmlText();
 			}
 		});
-		htmlEditor.addEventFilter(MouseEvent.MOUSE_RELEASED, new EventHandler<MouseEvent>() {
-			@Override public void handle(MouseEvent event) {
+		htmlEditor.addEventFilter(MouseEvent.MOUSE_RELEASED, (event)->{
 				if (event.getClickCount()==2) {
 		            WebView webView = (WebView)htmlEditor.lookup("WebView"); 
 					String refId;
@@ -126,7 +125,7 @@ public class BasicPage implements Page {
 						}
 					}
 				}
-			}});
+			});
 		initTopToolBar();
 		initBottomToolBar();
 	}
@@ -460,7 +459,6 @@ public class BasicPage implements Page {
 					+ "image.style.borderRadius = '"+newVal+"%';");
 			});
 		
-		Stage imageStage = new Stage();
 	    GridPane gridPane = new GridPane();
 	    gridPane.add(sizeLabel, 0, 0); 			gridPane.add(sizeBox, 1, 0);		gridPane.add(sizeSlider, 2, 0);		gridPane.add(alignBox, 3, 0);
 	    gridPane.add(borderRadiusLabel, 0, 1); 	gridPane.add(borderBox, 1, 1);	 	gridPane.add(borderSlider, 2, 1);	gridPane.add(borderTypeBox, 3, 1);	    
