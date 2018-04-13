@@ -33,7 +33,7 @@ public class Main extends Application
 	final String title = "Genetrix ver-1.6.0";
 	public static String styleFile = TopMenu.styles.Modena.toString();
 	
-	public static Stage stage = new Stage();
+	public static Stage mainStage = new Stage();
 	public static Project currentProject = new Project();
 	public static ContentsPage contentsPage = new ContentsPage();
 	public static PageViewer pageViewer = new PageViewer();
@@ -44,10 +44,10 @@ public class Main extends Application
 	public static double mouseDeltaX=0, mouseDeltaY=0;
 	
 
-	@Override public void start(Stage mainStage) throws Exception
+	@Override public void start(Stage stage) throws Exception
 	{	
+		stage = mainStage;
 		Main.languageTrie.buildLanguageTrie(Main.languageTrie.readWordList("EnglishLanguage.txt"));
-		mainStage = stage;
 		currentProject = new Project();
 		contentsPage.tree.getRoot().getChildren().add(new TreeItem<>(new BasicPage("New Page")));
 		
@@ -63,9 +63,14 @@ public class Main extends Application
 
 		mainStage.setOnCloseRequest((event)->{ 
 			try {
-			Main.currentProject.clearImageDir(); savePreferences();
+			Main.pageViewer.subStageMap.values().forEach((s)->s.close());
+			Main.currentProject.clearImageDir();
+			savePreferences();
 			}catch (Exception e) {
 				e.printStackTrace();
+			}
+			finally {
+				mainStage.close();
 			}
 		});
 		mainStage.setScene(scene);
@@ -76,7 +81,7 @@ public class Main extends Application
 	
 	public static void restyle(String file) {		
 		styleFile = file;
-		stage.getScene().getStylesheets().setAll(file);
+		mainStage.getScene().getStylesheets().setAll(file);
 		pageViewer.restyle(file);
 	}
 	
@@ -150,7 +155,7 @@ public class Main extends Application
 		stage.setScene(scene);
 		stage.getScene().getStylesheets().add(Main.styleFile);
 		stage.setTitle("Rename");
-		stage.initOwner(Main.stage);
+		stage.initOwner(Main.mainStage);
 		stage.initModality(modality);
 		stage.setAlwaysOnTop(false);
 		stage.requestFocus();

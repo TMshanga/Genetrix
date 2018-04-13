@@ -165,7 +165,7 @@ public class PageViewer {
 		}
 		if(addTab) {tabPane.getTabs().add(tab);}
 		tabPane.getSelectionModel().select(tab);
-		Main.stage.requestFocus();
+		Main.mainStage.requestFocus();
 	}
 
 	@SuppressWarnings("unchecked")

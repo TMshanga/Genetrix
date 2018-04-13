@@ -110,7 +110,7 @@ public class BasicPage implements Page {
 					if (!refId.equals("-1") && !refId.equals("\"-1\"") && !refId.equals("undefined")) {
 						if(Main.currentProject.pageMap.containsKey(refId))
 							if(ContentsPage.hasAncestor(Main.currentProject.pageMap.get(refId),Main.contentsPage.tree.getRoot())) {
-								if(htmlEditor.getScene() != Main.stage.getScene())
+								if(htmlEditor.getScene() != Main.mainStage.getScene())
 									Main.pageViewer.detachPage(Main.currentProject.pageMap.get(refId));
 								else
 									Main.pageViewer.addTab(Main.currentProject.pageMap.get(refId));
@@ -155,6 +155,7 @@ public class BasicPage implements Page {
 					+ "style.id = 'pageStyle';"
 					+ "style.innerHTML = 'button { background:none!important; color:inherit!important; border:none!important; padding:0!important; font: inherit; cursor: pointer; -webkit-text-decoration:underline dotted;}"
 					+ ".spelling {-webkit-text-decoration:underline red wavy;}"
+					+ "a { color: inherit; -webkit-text-decoration:underline dotted;}" //for exporting
 					+ "" + backgroundSetting
 					+ "';"
 					+ "document.head.appendChild(style);");
@@ -245,7 +246,7 @@ public class BasicPage implements Page {
 	        	else contextMenu.getItems().add(new MenuItem("(highlight the required text)"));
             }
             else contextMenu.getItems().add(new MenuItem("(highlight the required text)"));
-            contextMenu.show(Main.stage);
+            contextMenu.show(Main.mainStage);
         });
  
         colorPicker.setOnAction(new EventHandler<ActionEvent>() {
@@ -370,7 +371,7 @@ public class BasicPage implements Page {
 		FileChooser directoryChooser = new FileChooser();
 		if(Main.topMenu.currentImageFileDir!=null && Main.topMenu.currentImageFileDir.exists()) directoryChooser.setInitialDirectory(Main.topMenu.currentImageFileDir);
         directoryChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("image files", "*.jpg","*.jpeg", "*.png"));
-        File directory = directoryChooser.showOpenDialog(Main.stage);
+        File directory = directoryChooser.showOpenDialog(Main.mainStage);
         
         if(directory == null){
             System.out.println("No file selected");
@@ -567,21 +568,22 @@ public class BasicPage implements Page {
 			String htmlText = htmlEditor.getHtmlText();
 			int startIndex, endIndex;
 			{ /*startIndex*/
-				StringBuilder startString = new StringBuilder(htmlText.substring(0,htmlText.indexOf("<span><!--startSel-->")));
+				StringBuilder startString = new StringBuilder(htmlText.substring(0,htmlText.indexOf("<span><!--startSel-->")+"<span><!--startSel-->".length()));
 				if(startString.lastIndexOf("type=\"button\" id=\"pageLink\">") > startString.lastIndexOf("</button>")) //if start tag is closer
-					startIndex = startString.lastIndexOf("<button onclick=");
+					startIndex = startString.lastIndexOf("<button");
 				else 
 					startIndex = htmlText.indexOf("<span><!--startSel-->");
 			}
 			{ /*endIndex*/
 				int from = htmlText.indexOf("<!--endSel--></span>");
-				if(htmlText.indexOf("</button>",from) < htmlText.indexOf("<button onclick=",from) || (htmlText.indexOf("</button>",from)!=-1 && htmlText.indexOf("<button onclick=",from)==-1)) //if the end tag is closer
+				if(htmlText.indexOf("</button>",from) < htmlText.indexOf("<button",from) || (htmlText.indexOf("</button>",from)!=-1 && htmlText.indexOf("<button",from)==-1)) //if the end tag is closer
 					endIndex = htmlText.indexOf("</button>",from)+"</button>".length();
 				else
-					endIndex = htmlText.indexOf("<!--endSel--></span>");
+					endIndex = from;
 			}
+			//System.out.println(startIndex +" " + endIndex);
 			String subString = htmlText.substring(startIndex,endIndex);
-			subString = subString.replaceAll("<button onclick="+".*"+"type=\"button\" id=\"pageLink\">", "");
+			subString = subString.replaceAll("<button"+".*"+"type=\"button\" id=\"pageLink\">", "");
 			subString = subString.replace("</button>","");
 							
 			htmlText = htmlText.substring(0,startIndex) +subString+ htmlText.substring(endIndex);

@@ -53,7 +53,7 @@ public class Folder implements Page{
 		listView.getSelectionModel().selectedItemProperty().addListener((obsv,oldV,newV)->{
 			if (newV!=null) {
 				if(ContentsPage.hasAncestor(newV.page,Main.contentsPage.tree.getRoot())) {
-					if(listView.getScene() != Main.stage.getScene())
+					if(listView.getScene() != Main.mainStage.getScene())
 						Main.pageViewer.detachPage(newV.page);
 					else
 						Main.pageViewer.addTab(newV.page);

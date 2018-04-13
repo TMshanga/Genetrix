@@ -9,6 +9,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
 
 import javax.imageio.ImageIO;
 
@@ -97,7 +99,7 @@ public class TopMenu {
 		FileChooser directoryChooser = new FileChooser();
 		if(currentFileDir!=null && currentFileDir.exists()) directoryChooser.setInitialDirectory(currentFileDir);
         directoryChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Genetrix Project File(*.gpf)", "*.gpf"));
-        File directory = directoryChooser.showSaveDialog(Main.stage);
+        File directory = directoryChooser.showSaveDialog(Main.mainStage);
         save(directory);
 
 	}
@@ -107,7 +109,8 @@ public class TopMenu {
             System.out.println("No Directory selected");
         }else{
         	try {
-				FileOutputStream stream = new FileOutputStream(directory);
+				DeflaterOutputStream stream = new DeflaterOutputStream(new FileOutputStream(directory));
+				
 				stream.write(Main.currentProject.encode());
 				stream.close();
 		        currentFile = directory;
@@ -122,7 +125,7 @@ public class TopMenu {
 		FileChooser directoryChooser = new FileChooser();
 		if(currentFileDir!=null && currentFileDir.exists()) directoryChooser.setInitialDirectory(currentFileDir);
         directoryChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Genetrix Project File(*.gpf)", "*.gpf"));
-        File directory = directoryChooser.showOpenDialog(Main.stage);
+        File directory = directoryChooser.showOpenDialog(Main.mainStage);
         
         if(directory == null){
             System.out.println("No Directory selected");
@@ -130,7 +133,8 @@ public class TopMenu {
         else {
 			try {
 				Main.pageViewer.reset();
-				byte[] bytes = ByteStreams.toByteArray(new FileInputStream(directory));
+				InflaterInputStream in = new InflaterInputStream(new FileInputStream(directory));
+				byte[] bytes = ByteStreams.toByteArray(in);
 				Main.currentProject.decode(bytes);		
 				Main.currentProject.readyAllImages();
 				Main.contentsPage.tree.getRoot().setExpanded(true);
@@ -146,7 +150,7 @@ public class TopMenu {
 		Main.currentProject.clearUnusedImages();
 		DirectoryChooser directoryChooser = new DirectoryChooser();
 		if(currentFileDir!=null && currentFileDir.exists()) directoryChooser.setInitialDirectory(currentFileDir);
-        File directory = directoryChooser.showDialog(Main.stage);
+        File directory = directoryChooser.showDialog(Main.mainStage);
          
         if(directory == null){ System.out.println("No Directory selected");}
         else{
@@ -210,11 +214,13 @@ public class TopMenu {
     		if(!dataDir.exists()) dataDir.mkdir();
 
         	for(TreeItem<Page> page: exportMap.keySet()) {
-        		try {    			
-        			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(FilenameUtils.concat(pageDir.toString(), exportMap.get(page).getKey())), "UTF-16"));    			
-        			out.write(exportMap.get(page).getValue());
-					out.close();
-				} catch (IOException e) {e.printStackTrace();}
+        		if(page != Main.contentsPage.tree.getRoot()) {
+	        		try {    			
+	        			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(FilenameUtils.concat(pageDir.toString(), exportMap.get(page).getKey())), "UTF-16"));    			
+	        			out.write(exportMap.get(page).getValue());
+						out.close();
+					} catch (IOException e) {e.printStackTrace();}
+        		}
         	}
         	for(String key: Main.currentProject.imageMap.keySet()) {
         		File imageDir = new File(FilenameUtils.concat(dataDir.toString(), "IMG" + key +".png"));
@@ -239,7 +245,10 @@ public class TopMenu {
 	}
 	
 	public void contentsPageToHtml(HashMap<TreeItem<Page>,Pair<String,String>> exportMap ,TreeItem<Page> page, StringBuilder content) {
-		content.append( "<li><a href=\"pages/" + exportMap.get(page).getKey().replace(" ", "%20") + "\">"+page.getValue().getTitle()+"</a></li>");
+		if(page != Main.contentsPage.tree.getRoot())
+			content.append( "<li><a href=\"pages/" + exportMap.get(page).getKey().replace(" ", "%20") + "\">"+page.getValue().getTitle() + "</a></li>");
+		else
+			content.append("<li><a href=\"\">" + page.getValue().getTitle() + "</a></li>");
 		
 		page.getChildren().forEach(p -> {
 			content.append( "<ul>");

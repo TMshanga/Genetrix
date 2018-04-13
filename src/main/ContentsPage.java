@@ -74,13 +74,13 @@ public class ContentsPage {
 		});
 		
 		Menu templateMenu = new Menu("+🗐");
-		MenuItem characterPage = new MenuItem("Character +📃");
-		MenuItem locationPage = new MenuItem("Location +📃");
-		MenuItem eventPage = new MenuItem("Event +📃");
-		MenuItem motifPage = new MenuItem("Motif/Symbol +📃");
-		MenuItem threeActPage = new MenuItem("Three Act Structure +📃");
-		MenuItem eightArcPage = new MenuItem("Eight Arc Structure +📃");
-		MenuItem episodicPage = new MenuItem("Episodic Structure +📃");
+		MenuItem characterPage = new MenuItem("Character +📝");
+		MenuItem locationPage = new MenuItem("Location +📝");
+		MenuItem eventPage = new MenuItem("Event +📝");
+		MenuItem motifPage = new MenuItem("Motif/Symbol +📝");
+		MenuItem threeActPage = new MenuItem("Three Act Structure +📝");
+		MenuItem eightArcPage = new MenuItem("Eight Arc Structure +📝");
+		MenuItem episodicPage = new MenuItem("Episodic Structure +📝");
 		
 		characterPage.setOnAction( (event) ->{
 			addTemplate("templates/Character.htm","New Character");
