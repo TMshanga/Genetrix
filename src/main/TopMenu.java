@@ -133,9 +133,8 @@ public class TopMenu {
         else {
 			try {
 				Main.pageViewer.reset();
-				InflaterInputStream in = new InflaterInputStream(new FileInputStream(directory));
-				byte[] bytes = ByteStreams.toByteArray(in);
-				Main.currentProject.decode(bytes);		
+				InflaterInputStream inflator = new InflaterInputStream(new FileInputStream(directory));	
+				Main.currentProject.decode(ByteStreams.toByteArray(inflator));		
 				Main.currentProject.readyAllImages();
 				Main.contentsPage.tree.getRoot().setExpanded(true);
 		        currentFile = directory;

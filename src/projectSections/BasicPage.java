@@ -336,6 +336,7 @@ public class BasicPage implements Page {
 				for(String string: linkedHashSet) {
 					if(!Main.languageTrie.hasWord(string)) {
 						int start = 0;
+						
 						while((start = indexOfInnerText(string,start))!=-1) {
 							int end = start + string.length();	
 							String newStr = "<span class='spelling'>" + string + "</span>";
@@ -344,6 +345,7 @@ public class BasicPage implements Page {
 						}
 					}
 				}
+				System.out.println(htmlText);
 				htmlEditor.setHtmlText(htmlText);
 			}});
 	    clearLines.setOnAction(new EventHandler<ActionEvent>() {
@@ -357,6 +359,8 @@ public class BasicPage implements Page {
 	    Menu spellingMenu = new Menu("Spelling...");
 	    Menu language = new Menu("Change Langauge 📕...");
 	    language.getItems().addAll(english,spanish,french,italian);
+	    underline.setDisable(true);
+	    clearLines.setDisable(true); 	    
 	    spellingMenu.getItems().addAll(clearLines,underline,suggestions,language);
 	    
 	    Menu imageMenu = new Menu("Image...");
@@ -366,7 +370,7 @@ public class BasicPage implements Page {
 	    
 	    bar.getItems().addAll(menuBar,colorPicker);
 	}
-
+	
 	public void insertImage() {
 		FileChooser directoryChooser = new FileChooser();
 		if(Main.topMenu.currentImageFileDir!=null && Main.topMenu.currentImageFileDir.exists()) directoryChooser.setInitialDirectory(Main.topMenu.currentImageFileDir);
@@ -518,21 +522,18 @@ public class BasicPage implements Page {
 		StringBuilder currentWord = new StringBuilder();
 		StringBuilder tagWord = new StringBuilder();
 		boolean withinTag = false;	
+		String[][] skipTag = new String[][] 
+				{{"<script","<style","<span","<div","<img","<meta"},
+					{"</script>","</style>",">",">",">",">"}};
 		for(int i=startIndex;i<htmlText.length();i++) {
-			if(tagWord.toString().contains("<img")) {
-				i = htmlText.indexOf("%;\">",i)+"%;\">".length();
-				tagWord = new StringBuilder();
-				withinTag = false;
-			}
-			if(tagWord.toString().contains("<script")) {
-				i = htmlText.indexOf("</script>",i)+"</script>".length();
-				tagWord = new StringBuilder();
-				withinTag = false;
-			}
-			if(tagWord.toString().contains("<style")) {
-				i = htmlText.indexOf("</style>",i)+"</style>".length();
-				tagWord = new StringBuilder();
-				withinTag = false;
+			
+			for(int c=0;c<skipTag[0].length;c++) {
+				String open = skipTag[0][c], close = skipTag[1][c];
+				if(tagWord.toString().contains(open)) {
+					i = htmlText.indexOf(close,i)+close.length()-1;						
+
+					break;
+				}
 			}
 			
 			if(htmlText.charAt(i)=='<') {
@@ -543,14 +544,17 @@ public class BasicPage implements Page {
 				withinTag = false;
 				tagWord = new StringBuilder();
 			}		
-			else if (withinTag)
-				tagWord.append(htmlText.charAt(i));
-			
-			else if(!withinTag) 
+			if (withinTag)
+				tagWord.append(htmlText.charAt(i));			
+			else
 				currentWord.append(htmlText.charAt(i));
 									
-			if(currentWord.toString().contains(text))
-				return i-text.length()+1;
+			if(currentWord.toString().contains(text)) {
+				String startString= htmlText.substring(0, i);
+				if(startString.lastIndexOf(">")>startString.lastIndexOf("<"))
+					if(htmlText.indexOf("<",i)<htmlText.indexOf(">",i) || (htmlText.indexOf("<",i) !=-1 && htmlText.indexOf(">",i) ==-1))
+						return i-text.length()+1;
+			}
 		}
 		return -1;
 	}

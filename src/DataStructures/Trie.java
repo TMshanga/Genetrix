@@ -66,12 +66,12 @@ public class Trie extends Tree<Character>{
 				if (currentNode.getChildren().size()>0) break; //the end of a different word has been encountered
 				else currentNode.getParent().getChildren().remove(currentNode);currentNode = currentNode.getParent(); 
 			}	
-		}			
+		}
     }
  
     public ArrayList<String> getSuggestions(String word){
     	int mistakenCharNo = (word.length()<=6)?1:(word.length()<=8)?2:3;
-    	boolean checkOtherLengths = (word.length()<=7)?false:true;
+    	boolean checkOtherLengths = (word.length()<=10)?false:true;
     	return includeOtherLengths(word, mistakenCharNo, checkOtherLengths);
     }
     
