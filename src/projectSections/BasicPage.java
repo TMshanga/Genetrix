@@ -221,7 +221,7 @@ public class BasicPage implements Page {
         	ContextMenu contextMenu = new ContextMenu();
         	        	
             if((boolean)webEngine.executeScript("window.getSelection().rangeCount > 0")) {
-	        	String selection = (String)webEngine.executeScript("document.getSelection().toString()");
+	        	String selection = ((String)webEngine.executeScript("document.getSelection().toString()")).trim().split("\\s+")[0];
 	        	if(!selection.equals("")) {
 		        	if(Main.languageTrie.hasWord(selection)) {
 		        		contextMenu.getItems().add(new MenuItem(selection));
@@ -246,7 +246,7 @@ public class BasicPage implements Page {
 	        	else contextMenu.getItems().add(new MenuItem("(highlight the required text)"));
             }
             else contextMenu.getItems().add(new MenuItem("(highlight the required text)"));
-            contextMenu.show(Main.mainStage);
+            contextMenu.show(htmlEditor.getScene().getWindow());
         });
  
         colorPicker.setOnAction(new EventHandler<ActionEvent>() {

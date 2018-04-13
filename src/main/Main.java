@@ -150,11 +150,13 @@ public class Main extends Application
 	}
 	
 	public static Stage createSubStage(Scene scene, String name, Modality modality) {
-		Stage stage = new Stage();
 		scene.getStylesheets().add(Main.styleFile);
+		initHotKeys(scene);
+		
+		Stage stage = new Stage();
 		stage.setScene(scene);
 		stage.getScene().getStylesheets().add(Main.styleFile);
-		stage.setTitle("Rename");
+		stage.setTitle(name);
 		stage.initOwner(Main.mainStage);
 		stage.initModality(modality);
 		stage.setAlwaysOnTop(false);
