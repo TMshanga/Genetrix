@@ -2,6 +2,7 @@ package main;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.TreeItem;
+import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -23,14 +24,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 
+import javax.swing.ImageIcon;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import com.google.common.io.Resources;
 
 import dataStructures.Trie;
 
 public class Main extends Application
 {	
-	final String title = "Genetrix ver-1.6.0";
+	final String title = "Genetrix ver-1.6.1";
 	public static String styleFile = TopMenu.styles.Modena.toString();
 	
 	public static Stage mainStage = new Stage();
@@ -73,6 +78,7 @@ public class Main extends Application
 				mainStage.close();
 			}
 		});
+		initIcon(mainStage,"external/mainStageIcon.png");
 		mainStage.setScene(scene);
 		mainStage.setTitle(title);
 		mainStage.show();
@@ -152,8 +158,8 @@ public class Main extends Application
 	public static Stage createSubStage(Scene scene, String name, Modality modality) {
 		scene.getStylesheets().add(Main.styleFile);
 		initHotKeys(scene);
-		
 		Stage stage = new Stage();
+		initIcon(stage,"external/subStageIcon.png");		
 		stage.setScene(scene);
 		stage.getScene().getStylesheets().add(Main.styleFile);
 		stage.setTitle(name);
@@ -162,6 +168,11 @@ public class Main extends Application
 		stage.setAlwaysOnTop(false);
 		stage.requestFocus();
 		return stage;
+	}
+	
+	public static void initIcon(Stage stage,String file) {
+        Image applicationIcon = new Image(Resources.getResource(file).toString());
+        stage.getIcons().add(applicationIcon);
 	}
 	
 	public static void main(String[] args)
