@@ -36,7 +36,7 @@ import dataStructures.Trie;
 
 public class Main extends Application
 {	
-	final static String title = "Genetrix ver-1.6.5";
+	final static String title = "Genetrix ver-1.6.7";
 	public static String styleFile = TopMenu.styles.Modena.toString();
 	
 	public static Stage mainStage;
@@ -111,6 +111,7 @@ public class Main extends Application
 			prefs.append("<saveDir>" + settings.currentFileDir + "<saveDir>");
 			prefs.append("<imageDir>" + settings.currentImageFileDir + "<imageDir>");
 			prefs.append("<devSpelling>" + settings.spellChecking + "<devSpelling>");
+			prefs.append("<devHTML>" + settings.directHtmlEditing + "<devHTML>");
 		}
 		
 		String jarDir = FilenameUtils.concat(getJarDir(),"data");
@@ -131,6 +132,7 @@ public class Main extends Application
 				if(prefs.contains("<saveDir>")) settings.currentFileDir = new File(StringUtils.substringBetween(prefs,"<saveDir>"));
 				if(prefs.contains("<imageDir>")) settings.currentImageFileDir = new File(StringUtils.substringBetween(prefs,"<imageDir>"));
 				if(prefs.contains("<devSpelling>")) settings.spellChecking = new Boolean(StringUtils.substringBetween(prefs,"<devSpelling>"));
+				if(prefs.contains("<devHTML>")) settings.directHtmlEditing = new Boolean(StringUtils.substringBetween(prefs,"<devHTML>"));
 				if(prefs.contains("<saveFile>")) settings.currentFile = new File(StringUtils.substringBetween(prefs,"<saveFile>"));
 			} catch (IOException e) {
 				e.printStackTrace();

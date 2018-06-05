@@ -13,6 +13,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.TreeView;
@@ -59,6 +60,7 @@ public class BasicPage implements Page {
 	public String title ="";
     String JSReplaceSel = "",JSReplaceSelWithHTML = "",JSGetSel ="", JSAddColumn="";
     public HTMLEditor htmlEditor;
+	TextArea directHtmlEditor = new TextArea();
     String imageFilters ="";
     
 	@Override
@@ -90,16 +92,37 @@ public class BasicPage implements Page {
 
 	@Override public Pane BuildPane() {
 		Main.currentProject.readyAllImages();
-		return new BorderPane(htmlEditor);
+		BorderPane bp = new BorderPane(htmlEditor);
+		if(Main.settings.directHtmlEditing == true) {
+			bp.setBottom(directHtmlEditor);
+			directHtmlEditor.setVisible(false);
+		}
+		return bp;
 	}	
 
 	public void initHTMLEditor() {
 	    htmlEditor = new HTMLEditor();
 		initHtmlText();
 		
+		directHtmlEditor.textProperty().addListener((obs,oldv,newv)->{
+			String htmlText = htmlEditor.getHtmlText();
+			if (htmlText.contains("<body contenteditable=\"true\">") && htmlText.contains("</body>")) {
+				String first = htmlText.substring(0, htmlText.indexOf("<body contenteditable=\"true\">") + "<body contenteditable=\"true\">".length());
+				String last = htmlText.substring(htmlText.indexOf("</body>"));
+				htmlEditor.setHtmlText(first + newv + last);
+			}
+		});
+		
 		htmlEditor.addEventFilter(InputEvent.ANY, new EventHandler<InputEvent>() {
 			@Override public void handle(InputEvent arg0) {
 				initHtmlText();
+				if (!directHtmlEditor.isVisible()) {
+		    		String htmlText = htmlEditor.getHtmlText();
+					if (htmlText.contains("<body contenteditable=\"true\">") && htmlText.contains("</body>")) {
+			    		htmlText = htmlText.substring(htmlText.indexOf("<body contenteditable=\"true\">")+"<body contenteditable=\"true\">".length(),htmlText.indexOf("</body>"));
+			    		directHtmlEditor.setText(htmlText);
+					}
+				}
 			}
 		});
 		htmlEditor.addEventFilter(MouseEvent.MOUSE_RELEASED, (event)->{
@@ -170,7 +193,29 @@ public class BasicPage implements Page {
 	    MenuItem extendRow = new MenuItem("Extend Row ⍗");	    
 	    Button subscript = new Button("ₛ");	  
 	    Button regularscript = new Button("s");	  
-	    Button superscript = new Button("ˢ");	    
+	    Button superscript = new Button("ˢ");	
+	    Button editHtml = new Button("🔧");
+	    
+	    editHtml.setDisable(!Main.settings.directHtmlEditing);
+	    editHtml.setOnAction((event)->{
+	    	if(directHtmlEditor.isVisible()) {
+				directHtmlEditor.setVisible(false);
+	    	}
+	    	else {
+	    		directHtmlEditor.setVisible(true);
+	    		String htmlText = htmlEditor.getHtmlText();
+				if (htmlText.contains("<body contenteditable=\"true\">") && htmlText.contains("</body>")) {
+		    		htmlText = htmlText.substring(htmlText.indexOf("<body contenteditable=\"true\">")+"<body contenteditable=\"true\">".length(),htmlText.indexOf("</body>"));
+		    		directHtmlEditor.setText(htmlText);
+				}
+	    	}
+	    });
+		htmlEditor.addEventFilter(InputEvent.ANY, (event)-> {
+			editHtml.setDisable(!Main.settings.directHtmlEditing);
+			if(Main.settings.directHtmlEditing == false) {
+				directHtmlEditor.setVisible(false);
+			}
+		});
 	    
 	    extendRow.setOnAction((event)->{
 	        WebEngine webEngine = ((WebView)htmlEditor.lookup("WebView")).getEngine();
@@ -200,7 +245,6 @@ public class BasicPage implements Page {
 		    	webEngine.executeScript(String.format(JSReplaceSelWithHTML,String.format("<!--startSel-->%s<!--endSel-->",selection)));
 				String htmlText = htmlEditor.getHtmlText();
 		    	String htmlSelection = htmlText.substring(htmlText.indexOf("<!--startSel-->"),htmlText.indexOf("<!--endSel-->"));
-		    	System.out.println(htmlSelection);
 				htmlText = htmlText.replace("<span><!--startSel-->","<sub>");
 				htmlText = htmlText.replace("<!--endSel--></span>","</sub>");
 				
@@ -250,7 +294,7 @@ public class BasicPage implements Page {
 	    tableMenu.getItems().addAll(extendRow);  
 	    
 	    MenuBar menuBar = new MenuBar(tableMenu);
-	    bar.getItems().addAll(menuBar,subscript,regularscript,superscript);
+	    bar.getItems().addAll(menuBar,subscript,regularscript,superscript,editHtml);
 	}
 	
 	int stringSimilarity(String str1, String str2) {
@@ -340,7 +384,6 @@ public class BasicPage implements Page {
 			});   
 	    
 	    editImage.setOnAction((event) -> {
-	    		System.out.println(htmlEditor.getHtmlText());
             	WebView webView = (WebView)htmlEditor.lookup("WebView"); 
             	String selection = (String)webView.getEngine().executeScript(JSGetSel);
             	String imageID = StringUtils.substringBetween(selection, "IMG",".png");

@@ -187,15 +187,21 @@ public class TopMenu {
 	public void developerSettings() {
 		GridPane gridPane = new GridPane();
 		
-		CheckBox spellingBox = new CheckBox("Enable Spell Checking Options");
+		CheckBox spellingBox = new CheckBox("Enable spell checking options");
+		CheckBox htmlBox = new CheckBox("Enable direct HTML editing");
 		
 		spellingBox.setSelected(Main.settings.spellChecking);
+		htmlBox.setSelected(Main.settings.directHtmlEditing);
 		
 		spellingBox.selectedProperty().addListener((obsv,oldV,newV)->{
 			Main.settings.spellChecking = newV;
 		});
+		htmlBox.selectedProperty().addListener((obsv,oldV,newV)->{
+			Main.settings.directHtmlEditing = newV;
+		});
 		
 		gridPane.add(spellingBox, 0, 0);
+		gridPane.add(htmlBox, 0, 1);
 			
 		Stage subStage = Main.createSubStage(new Scene(gridPane), "Developer Settings", Modality.APPLICATION_MODAL);
 		subStage.setOnCloseRequest((event)->{ Main.pageViewer.refreshPages(); });
