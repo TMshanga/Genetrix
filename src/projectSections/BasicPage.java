@@ -116,7 +116,7 @@ public class BasicPage implements Page {
 		htmlEditor.addEventFilter(InputEvent.ANY, new EventHandler<InputEvent>() {
 			@Override public void handle(InputEvent arg0) {
 				initHtmlText();
-				if (!directHtmlEditor.isVisible()) {
+				if (directHtmlEditor.isVisible()) {
 		    		String htmlText = htmlEditor.getHtmlText();
 					if (htmlText.contains("<body contenteditable=\"true\">") && htmlText.contains("</body>")) {
 			    		htmlText = htmlText.substring(htmlText.indexOf("<body contenteditable=\"true\">")+"<body contenteditable=\"true\">".length(),htmlText.indexOf("</body>"));
