@@ -21,7 +21,7 @@ public class Folder implements Page{
 	public byte[] encode() {
 		byte[] data = Ints.toByteArray(Page.pageTypes.Folder.toInt());
 		try {
-			data = Bytes.concat(data,title.getBytes("UTF-8"));
+			data = Bytes.concat(data,title.getBytes("UTF-16"));
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -31,7 +31,7 @@ public class Folder implements Page{
 	@Override
 	public void decode(byte[] data, int offset, int length) {
 		try {
-			title = new String(data, offset+4, length-4,"UTF-8");
+			title = new String(data, offset+4, length-4,"UTF-16");
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -81,7 +81,7 @@ public class Folder implements Page{
 		public TreeItem<Page> page;
 		public String string;
 		pageString(TreeItem<Page> page){
-			this.string = page.getValue().getTitle();
+			this.string = page.getValue().toString();
 			this.page = page;
 		}
 		@Override

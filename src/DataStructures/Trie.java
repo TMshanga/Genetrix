@@ -9,18 +9,23 @@ import org.apache.commons.text.WordUtils;
 
 public class Trie extends Tree<Character>{
 
+	int longestWordLen = 0;
+	
 	public Trie(){
 		super('\0');
 	}
 	
     public void buildLanguageTrie(ArrayList<String> wordList) {
-    	wordList.forEach((w) ->addWord(w));
+    	wordList.forEach(w->addWord(w));
+    	System.out.println(longestWordLen);
     }
     
     public void addWords(String... words) {
   		for(String word:words) addWord(word);
     }
     public void addWord(String word) {
+    	if (word.length()>longestWordLen) 
+    		longestWordLen = word.length();
   		Node<Character> currentNode = getRoot();
     	char[] charArr = word.toCharArray();
 		for(int c=0;c<charArr.length;c++){
@@ -70,6 +75,8 @@ public class Trie extends Tree<Character>{
     }
  
     public ArrayList<String> getSuggestions(String word){
+    	if(word.length()>longestWordLen) return new ArrayList<String>();
+    	
     	int mistakenCharNo = (word.length()<=6)?1:(word.length()<=8)?2:3;
     	boolean checkOtherLengths = (word.length()<=10)?false:true;
     	return includeOtherLengths(word, mistakenCharNo, checkOtherLengths);
@@ -127,6 +134,17 @@ public class Trie extends Tree<Character>{
            list.add(line);
         reader.close();
         return list;	
+ 	}
+ 	
+ 	public static Trie parseWordList(String file) {
+ 	    try {
+ 	    	Trie trie = new Trie();
+			trie.buildLanguageTrie(trie.readWordList(file));
+			return trie;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
  	}
 
  	public ArrayList<ArrayList<Integer>> combination(int n, int k) {

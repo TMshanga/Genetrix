@@ -5,14 +5,19 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import com.google.common.io.Resources;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
@@ -32,7 +37,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -81,6 +85,20 @@ public class ContentsPage {
 		MenuItem threeActPage = new MenuItem("Three Act Structure +📝");
 		MenuItem eightArcPage = new MenuItem("Eight Arc Structure +📝");
 		MenuItem episodicPage = new MenuItem("Episodic Structure +📝");
+		
+		Menu settingsMenu = new Menu("⸎");
+		MenuItem collapse = new MenuItem("Collapse ◀");
+		settingsMenu.getItems().addAll(collapse);
+		collapse.setOnAction( (event) ->{
+			ObservableList<Node> priorChildren = FXCollections.observableArrayList(stackPane.getChildren());
+			Button expand = new Button("▶");
+			stackPane.setPadding(new Insets(5,0,0,0));
+			stackPane.getChildren().setAll(expand);
+			expand.setOnAction( (e) ->{
+				stackPane.setPadding(new Insets(5, 5, 0, 5));
+				stackPane.getChildren().setAll(priorChildren);
+			});
+		});
 		
 		characterPage.setOnAction( (event) ->{
 			addTemplate("templates/Character.htm","New Character");
@@ -181,7 +199,7 @@ public class ContentsPage {
 		// Final
 		stackPane.setAlignment(Pos.TOP_CENTER);
 		tree.setMinSize(0, Toolkit.getDefaultToolkit().getScreenSize().getHeight()/1.2);
-		stackPane.getChildren().addAll(title, new Separator(), new MenuBar(pageMenu,templateMenu), tree);
+		stackPane.getChildren().addAll(title, new Separator(), new MenuBar(settingsMenu,pageMenu,templateMenu), tree);
 		return stackPane;
 	}
 
@@ -193,7 +211,14 @@ public class ContentsPage {
 		MenuItem paste = new MenuItem("Paste");
 		MenuItem rename = new MenuItem("Rename");
 		MenuItem detach = new MenuItem("Detach 🗔");
-		contextMenu.getItems().addAll(cut, copy, paste, new SeparatorMenuItem(), rename,new SeparatorMenuItem(),detach);
+		MenuItem abnegate = new MenuItem("Abnegate");
+		Menu add = new Menu("Add...");
+		MenuItem addPage = new MenuItem("New Page +📄");
+		MenuItem addFolder = new MenuItem("New Folder +📁");
+		MenuItem addNote = new MenuItem("New Note +🗒");
+
+		add.getItems().addAll(addPage,addFolder,addNote);
+		contextMenu.getItems().addAll(cut, copy, paste, new SeparatorMenuItem(), rename,new SeparatorMenuItem(),detach,new SeparatorMenuItem(),add,abnegate);
 		cut.setOnAction(new cutAction());
 		rename.setOnAction(new renameAction());
 		copy.setOnAction((event) ->{
@@ -206,13 +231,11 @@ public class ContentsPage {
 			}
 		});
 		paste.setOnAction((event) ->{
-			if(tree.getSelectionModel().getSelectedItem() !=null) {
-				if(copiedPage != null) {
-					TreeItem<Page> item = tree.getSelectionModel().getSelectedItem();
+			TreeItem<Page> item = tree.getSelectionModel().getSelectedItem();
+			if(copiedPage != null && item != null) {
 					item.getChildren().add(copiedPage);
 					TreeItem<Page> oldCopy = copiedPage;
 					deepCopy(oldCopy,copiedPage = new TreeItem<Page>());
-				}
 			}
 		});
 		detach.setOnAction((event)->{
@@ -220,21 +243,55 @@ public class ContentsPage {
 	 		if(item != tree.getRoot())
 	 			Main.pageViewer.detachPage(item);
 		});
+		abnegate.setOnAction((event)->{
+			TreeItem<Page> item = tree.getSelectionModel().getSelectedItem();
+	 		if(item != tree.getRoot() && item != null) {
+	 			int index = item.getParent().getChildren().indexOf(item)+1;
+	 			ObservableList<TreeItem<Page>> children = FXCollections.observableArrayList(item.getChildren());
+	 			for(int i = children.size()-1;i>=0;i--) {
+		 			item.getChildren().remove(children.get(i));
+	 				item.getParent().getChildren().add(index,children.get(i));
+	 			}
+	 		}
+		});
+				
+		addPage.setOnAction((event)->{
+			insertPage(new BasicPage("New Page"));	 		
+		});
+		addFolder.setOnAction((event)->{
+			insertPage(new Folder("New Folder"));
+		});
+		addNote.setOnAction((event)->{
+			insertPage(new Note("New Note"));
+		});
 		
 		return contextMenu;
+	}
+	
+	void insertPage(Page page){
+		TreeItem<Page> item = tree.getSelectionModel().getSelectedItem();
+		item = (item != null)?item:tree.getRoot();
+		if(item != null) {
+	 		item.getChildren().add(new TreeItem<>(page));
+	 		item.setExpanded(true);
+		}
 	}
 	
 	class cutAction implements EventHandler<ActionEvent> {
 		@Override
 		public void handle(ActionEvent event) {
 			if(tree.getSelectionModel().getSelectedItem() !=null) {
-				TreeItem<Page> item = tree.getSelectionModel().getSelectedItem();
-				
-				if (item != tree.getRoot()) {
-					deepCopy(item,copiedPage = new TreeItem<Page>());
-					deepDelete(item);
-					if(Main.pageViewer.tabPane.getTabs().size()==0) {
-						Main.pageViewer.viewerPane.setCenter(tree.getRoot().getValue().BuildPane());
+				TreeItem<Page> item = tree.getSelectionModel().getSelectedItem();			
+				if (item != tree.getRoot() && item!=null) {
+					if(!(item.getValue() instanceof Folder && item.getChildren().size()==0)) {
+						Main.requestConfirmation("Confirm Deletion","Are you sure you wish to delete \""+item.getValue().getTitle()+"\"?",()->{},()->event.consume(),()->event.consume());				
+					}
+					if(!event.isConsumed()) {
+						deepCopy(item,copiedPage = new TreeItem<Page>());
+						deepDelete(item);
+						if(Main.pageViewer.tabPane.getTabs().size()==0) {
+							Main.pageViewer.viewerPane.setCenter(tree.getRoot().getValue().BuildPane());
+						}
 					}
 				}
 			}
@@ -245,26 +302,27 @@ public class ContentsPage {
 		@Override
 		public void handle(ActionEvent event) {
 			if(tree.getSelectionModel().getSelectedItem() !=null) {
-				TreeItem<Page> node = tree.getSelectionModel().getSelectedItem();
-				
-				TextField field = new TextField(node.getValue().getTitle());
-				StackPane pane = new StackPane(field);
-				Stage renameStage = Main.createSubStage(new Scene(pane, 300, field.getMinHeight()), "Rename", Modality.APPLICATION_MODAL);
-				pane.addEventHandler(KeyEvent.KEY_PRESSED, (keyEvent) ->{
-					if (keyEvent.getCode() == KeyCode.ENTER) {
-						Page page = node.getValue();
-						page.setTitle(field.getText());
-						node.setValue(null);
-						node.setValue(page); //refreshing the displayed text
-						Main.pageViewer.tabPane.getTabs().stream().map(t -> (CustomTab)t)
-						.filter(t->Main.currentProject.pageMap.containsKey(t.pageMapKey))
-						.forEach(t -> t.setText(Main.currentProject.pageMap.get(t.pageMapKey).getValue().getTitle()));
-						renameStage.close();
-					}
-				});
-				renameStage.show();
+				renameTreeItem(tree.getSelectionModel().getSelectedItem());
 			}
 		}
+	}
+	
+	public void renameTreeItem(TreeItem<Page> item) {
+		TextField field = new TextField(item.getValue().getTitle());
+		Stage renameStage = Main.createSubStage(new Scene(field, 300, field.getMinHeight()), "Rename", Modality.APPLICATION_MODAL);
+		renameStage.getScene().addEventFilter(KeyEvent.KEY_PRESSED, (keyEvent) ->{
+			if (keyEvent.getCode() == KeyCode.ENTER) {
+				Page page = item.getValue();
+				page.setTitle(field.getText());
+				item.setValue(null);
+				item.setValue(page); //refreshing the displayed text
+				Main.pageViewer.tabPane.getTabs().stream().map(t -> (CustomTab)t)
+					.filter(t->Main.currentProject.pageMap.containsKey(t.pageMapKey))
+					.forEach(t -> t.setText(Main.currentProject.pageMap.get(t.pageMapKey).getValue().getTitle()));
+				renameStage.close();
+			}
+		});
+		renameStage.show();
 	}
 
  	public void deepDelete(TreeItem<Page> node)
@@ -282,7 +340,7 @@ public class ContentsPage {
  			}
  		}
  		Main.currentProject.pageMap.inverse().remove(node);
- 		node.getChildren().forEach(n ->deepDelete(n));
+ 		FXCollections.observableArrayList(node.getChildren()).forEach(n ->deepDelete(n));
  	}
  	
  	public void deepCopy(TreeItem<Page> node, TreeItem<Page> clone)
@@ -323,8 +381,9 @@ public class ContentsPage {
     
     public <T> ArrayList<Integer> getAddress(TreeItem<T> node){
     	ArrayList<Integer> address = new ArrayList<Integer>();
+    	
     	while(node!=null) {
-    		if (node==node.getParent()) {
+    		if (node.getParent()==null) {
         		address.add(0,0);
     			break;
     		}

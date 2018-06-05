@@ -18,9 +18,9 @@ public class Note implements Page{
 	public byte[] encode() {
 		byte[] data = new byte[0];
 		try {
-			data = title.getBytes("UTF-8");
+			data = title.getBytes("UTF-16");
 			data = Bytes.concat(Ints.toByteArray(data.length),data);
-			data = Bytes.concat(data,textArea.getText().getBytes("UTF-8"));
+			data = Bytes.concat(data,textArea.getText().getBytes("UTF-16"));
 			data = Bytes.concat(Ints.toByteArray(Page.pageTypes.Note.toInt()),data);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
@@ -32,8 +32,8 @@ public class Note implements Page{
 	public void decode(byte[] data, int offset, int length) {
 		try {
 			int titleLen = ByteBuffer.wrap(data,offset+4,4).getInt();
-			title = new String(data,offset+8,titleLen,"UTF-8");
-			textArea.setText(new String(data,offset+titleLen+8,length-(titleLen+8),"UTF-8"));
+			title = new String(data,offset+8,titleLen,"UTF-16");
+			textArea.setText(new String(data,offset+titleLen+8,length-(titleLen+8),"UTF-16"));
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}

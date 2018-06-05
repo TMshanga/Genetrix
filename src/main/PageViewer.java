@@ -8,6 +8,7 @@ import java.util.UUID;
 import javafx.scene.Scene;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.Tooltip;
@@ -31,7 +32,7 @@ public class PageViewer {
 					TreeItem<Page> item = Main.currentProject.pageMap.get(((CustomTab)newVal).pageMapKey);
 					if (Main.currentProject.pageMap.containsKey(((CustomTab)newVal).pageMapKey)) {
 						if (ContentsPage.hasAncestor(item,Main.contentsPage.tree.getRoot())){
-							newVal.setText(item.getValue().getTitle());
+							Main.contentsPage.tree.getSelectionModel().select(item);
 							dockPage(item);
 						}
 						else {
@@ -48,6 +49,16 @@ public class PageViewer {
 				String key = ((CustomTab)tabPane.getSelectionModel().getSelectedItem()).pageMapKey;
 				String title = Main.currentProject.pageMap.get(key).getValue().getTitle();
 				tabPane.getSelectionModel().getSelectedItem().setText(title);	
+			}
+		});
+		tabPane.setOnDragDetected((event)->{
+			if(tabPane.getSelectionModel().getSelectedItem() != null) {
+				CustomTab tab = (CustomTab)tabPane.getSelectionModel().getSelectedItem();
+				if(Main.mouseDeltaX>0)
+					tab.moveTab(1);
+				else if (Main.mouseDeltaX<0)
+					tab.moveTab(-1);
+				tabPane.getSelectionModel().select(tab);
 			}
 		});
 		
@@ -123,6 +134,7 @@ public class PageViewer {
 			MenuItem detach = new MenuItem("Detatch 🗔");
 			MenuItem moveRight = new MenuItem("Move ⇉");
 			MenuItem moveLeft = new MenuItem("Move ⇇");
+			MenuItem rename = new MenuItem("Rename");
 
 			detach.setOnAction((event) ->{
 				if(Main.currentProject.pageMap.containsKey(pageMapKey))
@@ -131,17 +143,23 @@ public class PageViewer {
 			});
 			moveRight.setOnAction((event) -> {
 				moveTab(1);
+				tabPane.getSelectionModel().select(this);
 			});
 			moveLeft.setOnAction((event) ->{
 				moveTab(-1);
+				tabPane.getSelectionModel().select(this);
+			});						
+			rename.setOnAction((event) ->{
+				Main.contentsPage.renameTreeItem(Main.currentProject.pageMap.get(pageMapKey));
 			});
-			this.setOnClosed((event) -> {		
+			setOnClosed((event) -> {		
 				if(tabPane.getTabs().isEmpty())
 					viewerPane.setCenter(Main.contentsPage.tree.getRoot().getValue().BuildPane());
 			});
 			
+			
 			setTooltip(new Tooltip("Right click to detach page"));
-			contextMenu.getItems().addAll(detach,moveRight,moveLeft);	
+			contextMenu.getItems().addAll(detach,new SeparatorMenuItem(),moveRight,moveLeft,new SeparatorMenuItem(),rename);	
 			setContextMenu(contextMenu);
 		}
 		public void moveTab(int distance) {
@@ -169,9 +187,9 @@ public class PageViewer {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void restyle(String file) {
+	public void refreshPages() {
 		for (Stage stage: subStageMap.values()) {
-			stage.getScene().getStylesheets().setAll(file);
+			stage.getScene().getStylesheets().setAll(Main.styleFile);
 			if(((TreeItem<Page>)stage.getUserData()).getValue() instanceof Folder)
 				stage.setScene(new Scene((((TreeItem<Folder>)stage.getUserData()).getValue()).BuildPane((TreeItem<Page>)stage.getUserData())));
 			else

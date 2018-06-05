@@ -1,6 +1,6 @@
 //to be read to replace text at the users current selection     
     var sel, range;
-    var replacementText = '%s';
+    var replacementText = "%s";
     if (window.getSelection) {
         sel = window.getSelection();
         if (sel.rangeCount) {
